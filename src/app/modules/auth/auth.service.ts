@@ -1,8 +1,5 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-// import { AdminModel } from "../../models/admin.model"; // Assuming the correct path
-// import { AdminCredentials, JWTPayload } from "./auth.types";
-
 import { AdminModel } from "../../models/admin.model";
 import { JWTPayload } from "./auth.types";
 

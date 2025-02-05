@@ -1,10 +1,11 @@
-// models/Product.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 interface IProduct extends Document {
   name: string;
   details: string;
   category: string;
+  availableQuantity: number;
+  minimumOrderQuantity: number;
   attributeOptions: mongoose.Schema.Types.ObjectId; // Reference to ProductAttribute
   variations: {
     color: string;
@@ -30,6 +31,8 @@ const ProductSchema: Schema = new Schema(
         "Paper Bag",
       ], // Enum for predefined categories
     },
+  availableQuantity: { type: Number, required: true },
+  minimumOrderQuantity: { type: Number, required: true },
     attributeOptions: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProductAttribute",

@@ -2,33 +2,47 @@
 
 import { Types } from "mongoose";
 import ProductModel from "../../models/Product";  // Use default import
+import ProductAttributeModel from "../../models/ProductAttribute";
 
 export const ProductService = {
   create: async (productData: any) => {
     try {
-      const product = await ProductModel.create(productData);
+      const { name, details, category,minimumOrderQuantity,availableQuantity ,attributeOptions } = productData;
+
+      // Fetch Product Attributes using attributeOptions ID
+      const attributeData = await ProductAttributeModel.findById(attributeOptions);
+      if (!attributeData) {
+        throw new Error("Invalid attributeOptions ID. Product attributes not found.");
+      }
+
+      // Generate variations dynamically
+      const variations = [];
+      for (let i = 0; i < attributeData.color.length; i++) {
+        variations.push({
+          color: attributeData.color[i] || "N/A",
+          size: attributeData.size[i] || "N/A",
+          thickness: attributeData.thickness[i] || "N/A",
+          quantity: attributeData.quantity[i] || 0,
+          price: (Math.random() * 100).toFixed(2), // You can replace this with actual pricing logic
+        });
+      }
+
+      // Create new product with dynamically generated variations
+      const product = await ProductModel.create({
+        name,
+        details,
+        category,
+        minimumOrderQuantity,
+        availableQuantity,
+        attributeOptions,
+        variations,
+      });
+
       return product;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error("Error creating product: " + error.message);
-      } else {
-        throw new Error("Unknown error occurred while creating product.");
-      }
+      throw new Error("Error creating product: " + (error as Error).message);
     }
   },
-
-  // findAll: async () => {
-  //   try {
-  //     const products = await ProductModel.find();
-  //     return products;
-  //   } catch (error) {
-  //     if (error instanceof Error) {
-  //       throw new Error("Error fetching products: " + error.message);
-  //     } else {
-  //       throw new Error("Unknown error occurred while fetching products.");
-  //     }
-  //   }
-  // },
 
   findAll: async (page: number, limit: number) => {
     try {

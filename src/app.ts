@@ -37,7 +37,14 @@ app.use("/api", adminRoutes);
 app.use("/api/product-attributes", productAttributeRoutes);
 app.use("/api/messages", messageRoutes); // Register message routes
 
-const io = initSocket(server);
+export const io = initSocket(server);
+
+// socket.io
+io.listen(Number(socketPort));
+//@ts-ignore
+global.io = io;
+const serverIP = process.env.SERVER_IP || 'localhost';
+console.log(`Socket is listening on port ${serverIP}:${socketPort}`);
 
 app.post("/api/payments/webhook", express.raw({ type: "application/json" }), PaymentController.handleWebhook);
 app.use((req, res, next) => {
@@ -47,17 +54,14 @@ app.use((req, res, next) => {
 
 connectDB();
 app.use((req, res, next) => {
-    console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
-    next();
-  });
-  
+  console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
+  next();
+});
+
+
+
 export default app;
 function cors(): any {
   throw new Error("Function not implemented.");
 }
 
-io.listen(Number(socketPort));
-    //@ts-ignore
-    global.io = io;
-    const serverIP = process.env.SERVER_IP || 'localhost';
-    console.log(`Socket is listening on port ${serverIP}:${socketPort}`);

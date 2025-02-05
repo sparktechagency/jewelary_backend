@@ -1,0 +1,15 @@
+to fetch socket.io
+
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000");
+
+// Join the room (Call this function after user logs in)
+const userId = "USER_ID_FROM_AUTH";
+socket.emit("joinRoom", userId);
+
+// Listen for order status updates
+socket.on("orderStatusUpdate", (data) => {
+  console.log("Order Status Update:", data);
+  alert(`🔔 ${data.message}`);
+});

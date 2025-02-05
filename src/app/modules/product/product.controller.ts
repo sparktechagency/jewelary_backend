@@ -4,11 +4,17 @@ import { ProductService } from "./product.service";
 export const ProductController = {
   create: async (req: Request, res: Response): Promise<void> => {
     try {
-      const productData = req.body; // Get the product data from the request body
-      const product = await ProductService.create(productData); // Call the service to create the product
-      res.status(201).json(product); // Send back the created product
+      const productData = req.body;
+
+      if (!productData.attributeOptions) {
+        res.status(400).json({ message: "attributeOptions is required." });
+        return;
+      }
+
+      const product = await ProductService.create(productData);
+      res.status(201).json(product);
     } catch (error) {
-      res.status(500).json({ message: (error as Error).message }); // Send an error response if creation fails
+      res.status(500).json({ message: (error as Error).message });
     }
   },
 

@@ -1,4 +1,3 @@
-// models/ProductAttribute.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 // Define the structure for product attributes

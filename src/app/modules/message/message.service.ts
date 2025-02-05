@@ -1,12 +1,6 @@
 import { MessageModel, IMessage } from '../../models/message.model';
 
 export class MessageService {
-//   static async sendMessage(
-// // senderId: string,
-// receiverId: string, content: string, senderType: 'user' | 'admin', productId: any  ): Promise<IMessage> {
-//     const message = new MessageModel({ receiver: receiverId, content, senderType });
-//     return message.save();
-//   }
 static async sendMessage(
   receiverId: string,
   content: string,

@@ -7,10 +7,12 @@ const router = Router();
 // User routes
 router.post("/place-order", isAuthenticated, OrderController.placeOrder);
 router.get("/my-orders", isAuthenticated, OrderController.getOrderStatus);
-
 // Admin routes
 router.get("/orders", isAuthenticated, isAdmin, OrderController.getAllOrders);
 router.put("/orders/update-status", isAuthenticated, isAdmin, OrderController.updateOrderStatus);
 router.delete("/orders/:orderId", isAuthenticated, isAdmin, OrderController.deleteOrder);
-// router.get("/debug-orders", isAuthenticated, isAdmin, OrderController.debugOrders);
+//custom order routes
+// Admin route to create a custom order
+router.post("/create-custom-order", isAuthenticated, isAdmin, OrderController.createCustomOrderByName);
+
 export default router;

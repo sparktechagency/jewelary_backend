@@ -9,8 +9,7 @@ const router = Router();
 router.post("/pay", isAuthenticated, PaymentController.processPayment);
 router.get("/admin/payments", isAuthenticated, PaymentController.viewPayments);
 // Stripe Webhook (use raw body for Stripe signature verification)
-router.post(
-  "/webhook",
+router.post( "/webhook",
   bodyParser.raw({ type: "application/json" }),
   PaymentController.handleWebhook
 );
