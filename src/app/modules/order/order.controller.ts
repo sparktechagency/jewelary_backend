@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import OrderModel from "../../models/order.model";
 import UserModel from "../../models/user.model";
 import mongoose from "mongoose";
-import { io } from "../../../app";
+import { io } from "../../../app"; // Adjust the path as needed
 import ProductModel from "../../models/Product";
 import { upload } from "../multer/multer.conf"; // Adjust the path as needed
 import multer from "multer";
@@ -210,7 +210,7 @@ export const OrderController = {
       await newOrder.save();
   
       // Optionally, emit notification to user (e.g., using Socket.io or a different notification method)
-      io.to(userId.toString()).emit("orderStatusUpdate", {
+      io.emit("orderStatusUpdate", {
         message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
         orderId: newOrder._id,
       });

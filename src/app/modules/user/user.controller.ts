@@ -3,13 +3,8 @@ import { Request, Response, NextFunction } from "express";
 import UserModel from "../../models/user.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
-import ProductModel from "../../models/Product";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
-import { send } from "process";
 import { emailHelper } from "../mailer/mailer";
-import { io } from "../../../app";
 
 export const UserController = {
   register: async (req: Request, res: Response, next: NextFunction): Promise<void> => {

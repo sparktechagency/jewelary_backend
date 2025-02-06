@@ -4,9 +4,9 @@ import { isAdmin, isAuthenticated } from '../auth/auth.middleware';
 
 const router = express.Router();
 
-router.post('/admin', isAuthenticated,isAdmin,AdminController.createAdmin);
-router.put('/admin/:id', isAuthenticated,isAdmin,AdminController.updateAdmin);
-router.get('/admin/all', isAuthenticated,isAdmin,AdminController.getAdmins);
-router.delete('/admin/:id', isAuthenticated,isAdmin,AdminController.deleteAdmin);
+router.post('/', isAuthenticated,isAdmin,AdminController.createAdmin);
+router.put('/:id', isAuthenticated,isAdmin,AdminController.updateAdmin);
+router.get('/all', isAuthenticated,isAdmin,AdminController.getAdmins);
+router.delete('/:id', isAuthenticated,isAdmin,AdminController.deleteAdmin);
 
-export { router as adminRouter };
+export { router as adminRoutes};
