@@ -6,12 +6,12 @@ import dotenv from 'dotenv';
 dotenv.config(); // Load environment variables from .env file
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,   // Ensure you're using the correct host, such as smtp.gmail.com
+  host: process.env.SMTP_HOST,   
   port: Number(process.env.SMTP_PORT),
-  secure: false,                 // Set to true if using port 465 (SSL), false for 587 (STARTTLS)
+  secure: false,              
   auth: {
-    user: process.env.SMTP_USER, // Your Gmail address
-    pass: process.env.SMTP_PASS, // Your Gmail app password or regular password
+    user: process.env.SMTP_USER, 
+    pass: process.env.SMTP_PASS, 
   },
   
 });

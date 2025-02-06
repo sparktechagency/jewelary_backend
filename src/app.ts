@@ -14,6 +14,9 @@ import messageRoutes from "./app/modules/message/message.routes";
 import { initSocket } from "./config/socket";
 import { server } from "typescript";
 import productAttributeRoutes from "./app/modules/product/productAttributeRoutes";
+// import earningsRoutes from "../src/app/modules/earning/routes";
+import earningRoutes from "./app/modules/earning/earningRoutes";
+
 
 
 dotenv.config();
@@ -36,7 +39,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api", adminRoutes);
 app.use("/api/product-attributes", productAttributeRoutes);
 app.use("/api/messages", messageRoutes); // Register message routes
-
+app.use("/api", earningRoutes);
 export const io = initSocket(server);
 
 // socket.io

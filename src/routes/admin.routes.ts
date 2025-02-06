@@ -2,6 +2,7 @@ import express from "express";
 import { PaymentController } from "../app/modules/payment/payment.controller";
 import { isAdmin, isAuthenticated } from "../app/modules/auth/auth.middleware";
 import { ProductAttributeController } from "../app/modules/product/productAttributeController";
+// import { EarningsController } from "../app/modules/earning/controller";
 
 
 const router = express.Router();

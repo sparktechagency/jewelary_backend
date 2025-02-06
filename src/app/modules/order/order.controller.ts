@@ -9,36 +9,35 @@ import { upload } from "../multer/multer.conf"; // Adjust the path as needed
 import multer from "multer";
 
 export const OrderController = {
-
   placeOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       upload(req, res, async (err: any) => {
         if (err instanceof multer.MulterError) {
-          console.log('Multer Error:', err);
-          return res.status(400).json({ 
-            message: `Multer error: ${err.message}`, 
-            details: err 
+          console.log("Multer Error:", err);
+          return res.status(400).json({
+            message: `Multer error: ${err.message}`,
+            details: err,
           });
         } else if (err) {
           return res.status(400).json({ message: err.message });
         }
   
         try {
-          // Debug logs
-          console.log('Files:', req.files);
-          console.log('Body:', req.body);
+          console.log("Files:", req.files);
+          console.log("Body:", req.body);
   
           if (!req.user) {
             return res.status(401).json({ message: "Unauthorized: User not found." });
           }
   
           const userId = (req.user as { id: string }).id;
-          
-          // Parse products if it's a string
+  
           let products;
           try {
-            products = typeof req.body.products === 'string' ? 
-              JSON.parse(req.body.products) : req.body.products;
+            products =
+              typeof req.body.products === "string"
+                ? JSON.parse(req.body.products)
+                : req.body.products;
           } catch (e) {
             return res.status(400).json({ message: "Invalid products format" });
           }
@@ -46,22 +45,29 @@ export const OrderController = {
           const paymentType = req.body.paymentType;
           let paidAmount: number = Number(req.body.paidAmount) || 0;
   
-          // Validate products array
           if (!Array.isArray(products) || products.length === 0) {
             return res.status(400).json({ message: "Product list is required." });
           }
   
-          // Calculate total amount
           let totalAmount = 0;
           for (const item of products) {
             const product = await ProductModel.findById(item.productId);
             if (!product) {
-              return res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
+              return res
+                .status(404)
+                .json({ message: `Product with ID ${item.productId} not found.` });
             }
+  
+            // 🔥 Check if the user ordered at least the minimum quantity
+            if (item.quantity < product.minimumOrderQuantity) {
+              return res.status(400).json({
+                message: `You must order at least ${product.minimumOrderQuantity} units of ${product.name}.`,
+              });
+            }
+  
             totalAmount += product.variations[0].price * item.quantity;
           }
   
-          // Calculate payment details
           let dueAmount: number = totalAmount - paidAmount;
           let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
   
@@ -76,11 +82,12 @@ export const OrderController = {
             paymentStatus = "Pending";
           }
   
-          // Process uploaded files
-          const uploadedFiles = (req.files as { [fieldname: string]: Express.Multer.File[] })?.receipts || [];
-          const receiptUrls = uploadedFiles.map(file => `/uploads/receipts/${file.filename}`);
+          const uploadedFiles =
+            (req.files as { [fieldname: string]: Express.Multer.File[] })?.receipts || [];
+          const receiptUrls = uploadedFiles.map(
+            (file) => `/uploads/receipts/${file.filename}`
+          );
   
-          // Create new order
           const newOrder = new OrderModel({
             userId,
             items: products.map((item: any) => ({
@@ -92,7 +99,7 @@ export const OrderController = {
             dueAmount,
             paymentStatus,
             receiptUrls,
-            orderStatus: "pending"
+            orderStatus: "pending",
           });
   
           await newOrder.save();
@@ -105,17 +112,17 @@ export const OrderController = {
             dueAmount,
             receiptUrls,
           });
-  
         } catch (error) {
-          console.error('Order processing error:', error);
+          console.error("Order processing error:", error);
           next(error);
         }
       });
     } catch (error) {
-      console.error('Outer error:', error);
+      console.error("Outer error:", error);
       next(error);
     }
   },
+  
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userName, products, paymentType, paidAmount } = req.body;

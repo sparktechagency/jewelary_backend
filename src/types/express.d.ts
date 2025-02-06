@@ -1,5 +1,3 @@
-// src/types/express.d.ts
-import { Request } from 'express';
 // declare module 'express' {
 //   export interface Request {
 //     user?: {
@@ -11,3 +9,18 @@ import { Request } from 'express';
 // src/types/express.d.ts
 
 
+import { Request } from "express";
+
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: { id: string; role?: string };
+  }
+}
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role?: string;
+  };
+}
+import jwt from 'jsonwebtoken';
