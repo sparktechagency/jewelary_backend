@@ -15,9 +15,10 @@ const MessageSchema = new Schema<IMessage>(
     receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
     senderType: { type: String, enum: ['user', 'admin'], required: true }, // ✅ Ensure it's required
-    isRead: { type: Boolean, default: false },
+    isRead: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
 export const MessageModel = mongoose.model<IMessage>('Message', MessageSchema);
+

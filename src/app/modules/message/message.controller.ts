@@ -20,6 +20,9 @@ export class MessageController {
       res.status(500).json({ message: "Error sending message", error });
     }
   }
+
+
+
   static async getConversation(req: Request, res: Response): Promise<void> {
     try {
       if (!req.user || !req.user.id) {

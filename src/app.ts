@@ -86,7 +86,7 @@ import bodyParser from "body-parser";
 import { connectDB } from "./config/db.config";
 import router from "./routes";
 import { PaymentController } from "./app/modules/payment/payment.controller";
-
+// import apiRoutes from "../src/routes/admin.routes"
 dotenv.config();
 
 const app = express();
@@ -114,7 +114,7 @@ app.use(bodyParser.json());
 
 // ✅ Use the consolidated router from index.ts for API routes
 app.use("/api", router);
-
+// app.use("/api", apiRoutes);
 // ✅ Test route
 app.get("/", (req, res) => {
   res.send("I’m alive");

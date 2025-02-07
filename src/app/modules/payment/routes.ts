@@ -6,8 +6,8 @@ import bodyParser from "body-parser";
 const router = Router();
 
 // Process payment
-router.post("/pay", isAuthenticated, PaymentController.processPayment);
-router.get("/admin/payments", isAuthenticated, PaymentController.viewPayments);
+router.post("/", isAuthenticated, PaymentController.processPayment);
+router.get("/", isAuthenticated, PaymentController.viewPayments);
 // Stripe Webhook (use raw body for Stripe signature verification)
 router.post( "/webhook",
   bodyParser.raw({ type: "application/json" }),
