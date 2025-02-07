@@ -1,4 +1,3 @@
-// user.controller.ts 
 import { Request, Response, NextFunction } from "express";
 import UserModel from "../../models/user.model";
 import bcrypt from "bcryptjs";
@@ -53,88 +52,141 @@ export const UserController = {
     }
   },
 
+  // ✅ Forgot Password (Send OTP)
   forgotPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;
-  
+
       // Find user by email
       const user = await UserModel.findOne({ email });
       if (!user) {
         res.status(404).json({ message: "User not found." });
         return;
       }
-  
-      // Generate OTP for the reset process
+
+      // Generate OTP & reset token
       const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-      const resetToken = crypto.randomBytes(32).toString("hex"); // For security, separate reset token
       const resetTokenExpiry = Date.now() + 3600000; // OTP expiry (1 hour)
-  
+
       // Store OTP and expiry in the user model
-      user.passwordResetToken = otp; // Store OTP in passwordResetToken
+      user.passwordResetToken = otp;
       user.resetTokenExpiry = new Date(resetTokenExpiry);
-      user.passwordResetTokenForSecurity = resetToken; // Store reset token for security (if required)
       await user.save();
-  
-      // Send OTP to the user's email
+
+      // Send OTP via email
       await emailHelper.sendEmail({
         to: email,
         subject: "Password Reset OTP",
-        html: `Your OTP for password reset is ${otp}. It will expire in 1 hour.`,
+        html: `Your OTP for password reset is <b>${otp}</b>. It will expire in 1 hour.`,
       });
-  
+
       res.status(200).json({ message: "OTP sent to email." });
     } catch (error) {
-      console.error("Error in forgotPassword:", error);
       next(error);
     }
   },
+
+
+  verifyOtp: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        // Get token from headers
+        const token = req.headers.authorization?.split(" ")[1]; // Extract token from "Bearer <token>"
+        if (!token) {
+            res.status(401).json({ message: "Unauthorized: No token provided." });
+            return;
+        }
+
+        // Verify JWT token and extract user ID
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
+        const userId = decoded.userId;
+
+        // Find user by ID
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            res.status(404).json({ message: "User not found." });
+            return;
+        }
+
+        const { otp } = req.body;
+
+        // Validate OTP
+        if (!otp) {
+            res.status(400).json({ message: "OTP is required." });
+            return;
+        }
+
+        // Check if OTP is valid and not expired
+        if (!user.passwordResetToken || !user.resetTokenExpiry || user.resetTokenExpiry.getTime() < Date.now()) {
+            res.status(400).json({ message: "OTP has expired or is invalid." });
+            return;
+        }
+
+        if (otp !== user.passwordResetToken) {
+            res.status(400).json({ message: "Invalid OTP." });
+            return;
+        }
+
+        // If OTP is valid, clear it from the database
+        user.passwordResetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
+
+        res.status(200).json({ message: "OTP verified successfully." });
+    } catch (error) {
+        console.error("Error in verifyOtp:", error);
+        res.status(401).json({ message: "Invalid or expired token." });
+        next(error);
+    }
+},
+
+  // ✅ Reset Password
   resetPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { email, token, newPassword, confirmPassword } = req.body;
-  
-      // Validate new password and confirm password match
+      // Get token from headers
+      const token = req.headers.authorization?.split(" ")[1]; // Extract token from "Bearer <token>"
+      if (!token) {
+        res.status(401).json({ message: "Unauthorized: No token provided." });
+        return;
+      }
+
+      // Verify JWT token and extract user ID
+      const decoded: any = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
+      const userId = decoded.userId;
+
+      // Find user by ID
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found." });
+        return;
+      }
+
+      const { newPassword, confirmPassword } = req.body;
+
+      // Validate password fields
+      if (!newPassword || !confirmPassword) {
+        res.status(400).json({ message: "Both newPassword and confirmPassword are required." });
+        return;
+      }
+
       if (newPassword !== confirmPassword) {
         res.status(400).json({ message: "Passwords do not match." });
         return;
       }
-  
-      // Find user by email
-      const user = await UserModel.findOne({ email });
-      if (!user) {
-        res.status(404).json({ message: "User not found." });
-        return;
-      }
-  
-      // Check if OTP and token have expired
-      if (!user.passwordResetToken || !user.resetTokenExpiry || user.resetTokenExpiry.getTime() < Date.now()) {
-        res.status(400).json({ message: "OTP has expired or is invalid." });
-        return;
-      }
-  
-      // Validate OTP (compare with the OTP sent to user's email)
-      if (token !== user.passwordResetToken) {
-        res.status(400).json({ message: "Invalid OTP." });
-        return;
-      }
-  
+
       // Hash the new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-  
-      // Set the new password and clear the reset token
+
+      // Update the password
       user.password = hashedPassword;
-      user.passwordResetToken = undefined; // Clear the OTP
-      user.resetTokenExpiry = undefined; // Clear the expiry time
-  
-      // Save the updated user
       await user.save();
-  
+
       res.status(200).json({ message: "Password reset successful." });
     } catch (error) {
       console.error("Error in resetPassword:", error);
+      res.status(401).json({ message: "Invalid or expired token." });
       next(error);
     }
-  },
-  
+},
   
 // Get all users (accessible only to admin)
 getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -198,5 +250,3 @@ deleteUser: async (req: Request, res: Response, next: NextFunction): Promise<voi
 
 
 };
-
-
