@@ -7,7 +7,7 @@ import OrderModel from "../../models/order.model";
 dotenv.config();
 
 // Stripe initialization with the correct API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_4eC39HqLyjWDarjtT1zdp7dc", {
   apiVersion: "2025-01-27.acacia", // Keep the API version as specified
 });
 export const PaymentController = {
@@ -110,7 +110,7 @@ export const PaymentController = {
   handleWebhook: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const sig = req.headers["stripe-signature"];
-      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || "sk_test_51Qo09pKpgF9iR45XjgUuspFwGcZj3JGxO1oqgtiuQhHd6oXyTX4WgwrqtwTfJGivMyoejG9qwxFRuEwAwPDCQxKZ00WBEhlTxo";
   
       if (!sig || !endpointSecret) {
         res.status(400).json({ message: "Missing Stripe signature or webhook secret." });

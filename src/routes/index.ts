@@ -8,6 +8,7 @@ import MessageRoutes  from '../app/modules/message/message.routes';
 import  EarningRoutes  from '../app/modules/earning/earningRoutes';
 import AuthRoutes from '../app/modules/auth/auth.routes'
 import productAttributeRoutes from '../../src/app/modules/product/productAttributeRoutes'
+import categoryRoutes from '../app/modules/category/categoryRoutes'
 // import productRoute from '../app/modules/product/product.routes'
 
 
@@ -20,6 +21,7 @@ const apiRoutes = [
   { path: '/auth/users', route: UserRoutes },
   { path: '/products', route: ProductRoutes },
   { path: '/product-attributes', route: productAttributeRoutes },
+  { path: '/categories', route: categoryRoutes},
   // product-attributes
   { path: '/orders', route: OrderRoutes },
   { path: '/admin', route: adminRoutes },

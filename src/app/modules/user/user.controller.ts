@@ -6,25 +6,59 @@ import crypto from "crypto";
 import { emailHelper } from "../mailer/mailer";
 
 export const UserController = {
+
   register: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { username, email,phoneNumber,businessName, password } = req.body;
-
+      console.log("Register endpoint hit with data:", req.body); // Debug request data
+  
+      if (Object.keys(req.body).length === 0) {
+        console.log("Empty request body received.");
+        res.status(400).json({ message: "Request body cannot be empty" });
+        return;
+      }
+  
+      const { username, email, phoneNumber, businessName, password, confirmPassword, role } = req.body;
+  
+      if (!username || !email || !phoneNumber || !businessName || !password || !confirmPassword || role) {
+        console.log("Missing required fields:", req.body);
+        res.status(400).json({ message: "All fields are required" });
+        return;
+      }
+  
       const existingUser = await UserModel.findOne({ email });
       if (existingUser) {
+        console.log("User already exists:", email);
         res.status(400).json({ message: "User already exists" });
         return;
       }
-
+  
+      const existingPhone = await UserModel.findOne({ phoneNumber });
+      if (existingPhone) {
+        console.log("Phone number already exists:", phoneNumber);
+        res.status(400).json({ message: "Phone number already exists" });
+        return;
+      }
+  
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = new UserModel({ username, email,phoneNumber,businessName, password: hashedPassword, confirmPassword: hashedPassword });
-
+      const newUser = new UserModel({
+        username,
+        email,
+        phoneNumber,
+        businessName,
+        password: hashedPassword,
+        confirmPassword: hashedPassword,
+      });
+  
       await newUser.save();
+      console.log("New user registered:", email);
       res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-      next(error); // Pass error to middleware
+      console.error("Error in register:", error);
+      next(error);
     }
   },
+  
+  
 
   login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

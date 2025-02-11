@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { Request } from "express"; // Import Request from express
 
-const storage = multer.diskStorage({
+export const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, "../../../uploads/receipts");
     if (!fs.existsSync(uploadDir)) {
@@ -35,5 +35,6 @@ export const upload = multer({
   },
   fileFilter: fileFilter
 }).fields([
+  { name: "image", maxCount: 1 }, 
   { name: 'receipts', maxCount: 5 }
 ]);

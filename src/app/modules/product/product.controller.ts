@@ -2,22 +2,44 @@ import { Request, Response } from "express";
 import { ProductService } from "./product.service";
 
 export const ProductController = {
+  // create: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const productData = req.body;
+  
+  //     if (!productData.attributeOptions) {
+  //       res.status(400).json({ message: "attributeOptions is required." });
+  //       return;
+  //     }
+  
+  //     if (productData.minimumOrderQuantity && productData.availableQuantity < productData.minimumOrderQuantity) {
+  //       res.status(400).json({
+  //         message: `Minimum order quantity is ${productData.minimumOrderQuantity}. Please increase the order quantity.`,
+  //       });
+  //       return;
+  //     }
+  
+  //     const product = await ProductService.create(productData);
+  //     res.status(201).json(product);
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
   create: async (req: Request, res: Response): Promise<void> => {
     try {
       const productData = req.body;
-  
+
       if (!productData.attributeOptions) {
         res.status(400).json({ message: "attributeOptions is required." });
         return;
       }
-  
+
       if (productData.minimumOrderQuantity && productData.availableQuantity < productData.minimumOrderQuantity) {
         res.status(400).json({
           message: `Minimum order quantity is ${productData.minimumOrderQuantity}. Please increase the order quantity.`,
         });
         return;
       }
-  
+
       const product = await ProductService.create(productData);
       res.status(201).json(product);
     } catch (error) {
@@ -78,34 +100,34 @@ export const ProductController = {
     }
   },
 
-  getProductsByCategory: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { category } = req.query;
+  // getProductsByCategory: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const { category } = req.query;
 
-      if (!category) {
-        res.status(400).json({ message: "Category is required" });
-        return;
-      }
+  //     if (!category) {
+  //       res.status(400).json({ message: "Category is required" });
+  //       return;
+  //     }
 
-      const validCategories = [
-        "Jewelry Box",
-        "Leather Box",
-        "Cardboard Box",
-        "Paper Box",
-        "Paper Bag",
-      ];
+  //     const validCategories = [
+  //       "Jewelry Box",
+  //       "Leather Box",
+  //       "Cardboard Box",
+  //       "Paper Box",
+  //       "Paper Bag",
+  //     ];
 
-      if (!validCategories.includes(category as string)) {
-        res.status(400).json({ message: "Invalid category" });
-        return;
-      }
+  //     if (!validCategories.includes(category as string)) {
+  //       res.status(400).json({ message: "Invalid category" });
+  //       return;
+  //     }
 
-      const products = await ProductService.getProductsByCategory(category as string);
-      res.status(200).json({ success: true, products });
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
-  },
+  //     const products = await ProductService.getProductsByCategory(category as string);
+  //     res.status(200).json({ success: true, products });
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
 
   search: async (req: Request, res: Response): Promise<void> => {
     try {

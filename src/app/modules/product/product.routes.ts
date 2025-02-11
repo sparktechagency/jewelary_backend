@@ -12,7 +12,6 @@ router.delete("/:id", isAuthenticated, ProductController.delete); // Only admins
 
 // Public access to find all products and find by id
 router.get("/", ProductController.findAll);
-router.get("/category", ProductController.getProductsByCategory);
 router.get("/search", ProductController.search);
 router.get("/:id", ProductController.findById);
 
