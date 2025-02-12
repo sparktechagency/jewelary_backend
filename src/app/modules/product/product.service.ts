@@ -1,5 +1,3 @@
-// Product.service.ts 
-
 import { Types } from "mongoose";
 import ProductModel from "../../models/Product";  // Use default import
 import ProductAttributeModel from "../../models/ProductAttribute";
@@ -7,7 +5,7 @@ import ProductAttributeModel from "../../models/ProductAttribute";
 export const ProductService = {
   create: async (productData: any) => {
     try {
-      const { name, details, category, minimumOrderQuantity, availableQuantity, attributeOptions } = productData;
+      const { name, details, category, minimumOrderQuantity, availableQuantity, attributeOptions, deliveryCharge } = productData;
   
       // Check if the minimum order quantity condition is met
       if (availableQuantity < minimumOrderQuantity) {
@@ -37,6 +35,7 @@ export const ProductService = {
         details,
         category,
         minimumOrderQuantity,
+        deliveryCharge,
         availableQuantity,
         attributeOptions,
         variations,

@@ -86,40 +86,48 @@ export const UserController = {
     }
   },
 
-  // ✅ Forgot Password (Send OTP)
+
+
   forgotPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;
-
+  
       // Find user by email
       const user = await UserModel.findOne({ email });
       if (!user) {
         res.status(404).json({ message: "User not found." });
         return;
       }
-
+  
       // Generate OTP & reset token
       const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
       const resetTokenExpiry = Date.now() + 3600000; // OTP expiry (1 hour)
-
+  
       // Store OTP and expiry in the user model
       user.passwordResetToken = otp;
       user.resetTokenExpiry = new Date(resetTokenExpiry);
       await user.save();
-
+  
+      // Generate JWT token (assuming you have a user object that has the ID)
+      const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {
+        expiresIn: '1h', // or any time you prefer
+      });
+  
+      // Console log the token
+      console.log("JWT Token for User:", jwtToken); // Log the token to the console
+  
       // Send OTP via email
       await emailHelper.sendEmail({
         to: email,
         subject: "Password Reset OTP",
         html: `Your OTP for password reset is <b>${otp}</b>. It will expire in 1 hour.`,
       });
-
-      res.status(200).json({ message: "OTP sent to email." });
+  
+      res.status(200).json({ message: "OTP sent to email.", otp, jwtToken }); // Optionally return the token
     } catch (error) {
       next(error);
     }
   },
-
 
   verifyOtp: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

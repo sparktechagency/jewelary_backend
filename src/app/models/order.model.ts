@@ -3,6 +3,9 @@ import mongoose, { Document, Schema } from "mongoose";
 interface IOrder extends Document {
   userId: mongoose.Schema.Types.ObjectId;
   items: { productId: mongoose.Schema.Types.ObjectId; quantity: number }[];
+  contactName: string;
+  contactNumber: string;
+  deliverTo: string;
   totalAmount: number;
   paidAmount: number;
   receipts: string[];
@@ -21,6 +24,10 @@ const OrderSchema = new Schema<IOrder>({
       quantity: { type: Number, required: true },
     },
   ],
+
+  contactName: { type: String, required: true },
+  contactNumber: { type: String, required: true },
+  deliverTo: { type: String, required: true },
   totalAmount: { type: Number, required: true },
   paidAmount: { type: Number, required: true, default: 0 },
   receiptUrls: [{ type: String }], // Changed from receipts to receiptUrls

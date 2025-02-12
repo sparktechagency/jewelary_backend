@@ -6,6 +6,7 @@ interface IProductAttribute extends Document {
   size: string[];
   thickness: string[];
   quantity: number[];
+  price: number
 }
 
 const ProductAttributeSchema: Schema = new Schema(
@@ -14,6 +15,7 @@ const ProductAttributeSchema: Schema = new Schema(
     size: { type: [String], required: true }, // Array of sizes
     thickness: { type: [String], required: true }, // Array of thicknesses
     quantity: { type: [Number], required: true }, // Array of quantities
+    price:  { type: [Number], required: true },
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt fields

@@ -7,48 +7,49 @@ import { io } from "../../../app"; // Adjust the path as needed
 import ProductModel from "../../models/Product";
 import { upload } from "../multer/multer.conf"; // Adjust the path as needed
 import multer from "multer";
+import ProductAttribute from "../../models/ProductAttribute";
+import ProductAttributeModel from "../../models/ProductAttribute";
 
 export const OrderController = {
+
   placeOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       upload(req, res, async (err: any) => {
         if (err instanceof multer.MulterError) {
           console.log("Multer Error:", err);
-          return res.status(400).json({
-            message: `Multer error: ${err.message}`,
-            details: err,
-          });
+          return res.status(400).json({ message: `Multer error: ${err.message}`, details: err });
         } else if (err) {
           return res.status(400).json({ message: err.message });
         }
-  
+
         try {
           console.log("Files:", req.files);
           console.log("Body:", req.body);
-  
+
           if (!req.user) {
             return res.status(401).json({ message: "Unauthorized: User not found." });
           }
-  
+
+          let { contactName, contactNumber, deliverTo, paymentType, paidAmount } = req.body;
+
+          // ✅ Validate required fields
+          if (!contactName || !contactNumber || !deliverTo) {
+            return res.status(400).json({ message: "Missing required fields: contactName, contactNumber, deliverTo." });
+          }
+
           const userId = (req.user as { id: string }).id;
-  
+
           let products;
           try {
-            products =
-              typeof req.body.products === "string"
-                ? JSON.parse(req.body.products)
-                : req.body.products;
+            products = typeof req.body.products === "string" ? JSON.parse(req.body.products) : req.body.products;
           } catch (e) {
             return res.status(400).json({ message: "Invalid products format" });
           }
-  
-          const paymentType = req.body.paymentType;
-          let paidAmount: number = Number(req.body.paidAmount) || 0;
-  
+
           if (!Array.isArray(products) || products.length === 0) {
             return res.status(400).json({ message: "Product list is required." });
           }
-  
+
           let totalAmount = 0;
           for (const item of products) {
             const product = await ProductModel.findById(item.productId);
@@ -94,6 +95,9 @@ export const OrderController = {
               productId: item.productId,
               quantity: item.quantity,
             })),
+            contactName,
+            contactNumber,
+            deliverTo,
             totalAmount,
             paidAmount,
             dueAmount,
@@ -121,8 +125,11 @@ export const OrderController = {
       console.error("Outer error:", error);
       next(error);
     }
+
+
   },
   
+
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userName, products, paymentType, paidAmount } = req.body;
@@ -229,7 +236,6 @@ export const OrderController = {
   },
   
   
-
   getAllOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       console.log("🔍 Fetching Orders...");
@@ -346,3 +352,4 @@ export const OrderController = {
 };
 
 export const { placeOrder, getAllOrders, getOrderStatus, updateOrderStatus, deleteOrder } = OrderController;
+
