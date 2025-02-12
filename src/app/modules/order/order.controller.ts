@@ -5,130 +5,124 @@ import UserModel from "../../models/user.model";
 import mongoose from "mongoose";
 import { io } from "../../../app"; // Adjust the path as needed
 import ProductModel from "../../models/Product";
-import { upload } from "../multer/multer.conf"; // Adjust the path as needed
 import multer from "multer";
 import ProductAttribute from "../../models/ProductAttribute";
 import ProductAttributeModel from "../../models/ProductAttribute";
+import { uploadOrder } from "../multer/multer.conf";
 
 export const OrderController = {
 
+
   placeOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      upload(req, res, async (err: any) => {
-        if (err instanceof multer.MulterError) {
-          console.log("Multer Error:", err);
-          return res.status(400).json({ message: `Multer error: ${err.message}`, details: err });
-        } else if (err) {
-          return res.status(400).json({ message: err.message });
+    uploadOrder(req, res, async (err: any) => {
+      if (err) {
+        console.log("Multer Error:", err);
+        return res.status(400).json({ message: `Multer error: ${err.message}`, details: err });
+      }
+
+      console.log("Files:", req.files);
+      console.log("Body:", req.body);
+
+      try {
+        if (!req.user) {
+          return res.status(401).json({ message: "Unauthorized: User not found." });
         }
 
+        let { contactName, contactNumber, deliverTo, paymentType, paidAmount } = req.body;
+
+        // ✅ Convert numeric values
+        paidAmount = Number(paidAmount) || 0;
+
+        // ✅ Validate required fields
+        if (!contactName || !contactNumber || !deliverTo) {
+          return res.status(400).json({ message: "Missing required fields: contactName, contactNumber, deliverTo." });
+        }
+
+        const userId = (req.user as { id: string }).id;
+
+        let products;
         try {
-          console.log("Files:", req.files);
-          console.log("Body:", req.body);
-
-          if (!req.user) {
-            return res.status(401).json({ message: "Unauthorized: User not found." });
-          }
-
-          let { contactName, contactNumber, deliverTo, paymentType, paidAmount } = req.body;
-
-          // ✅ Validate required fields
-          if (!contactName || !contactNumber || !deliverTo) {
-            return res.status(400).json({ message: "Missing required fields: contactName, contactNumber, deliverTo." });
-          }
-
-          const userId = (req.user as { id: string }).id;
-
-          let products;
-          try {
-            products = typeof req.body.products === "string" ? JSON.parse(req.body.products) : req.body.products;
-          } catch (e) {
-            return res.status(400).json({ message: "Invalid products format" });
-          }
-
-          if (!Array.isArray(products) || products.length === 0) {
-            return res.status(400).json({ message: "Product list is required." });
-          }
-
-          let totalAmount = 0;
-          for (const item of products) {
-            const product = await ProductModel.findById(item.productId);
-            if (!product) {
-              return res
-                .status(404)
-                .json({ message: `Product with ID ${item.productId} not found.` });
-            }
-  
-            // 🔥 Check if the user ordered at least the minimum quantity
-            if (item.quantity < product.minimumOrderQuantity) {
-              return res.status(400).json({
-                message: `You must order at least ${product.minimumOrderQuantity} units of ${product.name}.`,
-              });
-            }
-  
-            totalAmount += product.variations[0].price * item.quantity;
-          }
-  
-          let dueAmount: number = totalAmount - paidAmount;
-          let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
-  
-          if (paymentType === "full") {
-            dueAmount = 0;
-            paymentStatus = "Paid";
-          } else if (paymentType === "partial") {
-            paymentStatus = dueAmount > 0 ? "Partial" : "Paid";
-          } else if (paymentType === "cod") {
-            dueAmount = totalAmount;
-            paidAmount = 0;
-            paymentStatus = "Pending";
-          }
-  
-          const uploadedFiles =
-            (req.files as { [fieldname: string]: Express.Multer.File[] })?.receipts || [];
-          const receiptUrls = uploadedFiles.map(
-            (file) => `/uploads/receipts/${file.filename}`
-          );
-  
-          const newOrder = new OrderModel({
-            userId,
-            items: products.map((item: any) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
-            contactName,
-            contactNumber,
-            deliverTo,
-            totalAmount,
-            paidAmount,
-            dueAmount,
-            paymentStatus,
-            receiptUrls,
-            orderStatus: "pending",
-          });
-  
-          await newOrder.save();
-  
-          return res.status(201).json({
-            message: "Order placed successfully. Proceed to payment.",
-            orderId: newOrder._id,
-            totalAmount,
-            paidAmount,
-            dueAmount,
-            receiptUrls,
-          });
-        } catch (error) {
-          console.error("Order processing error:", error);
-          next(error);
+          products = typeof req.body.products === "string" ? JSON.parse(req.body.products) : req.body.products;
+        } catch (e) {
+          return res.status(400).json({ message: "Invalid products format" });
         }
-      });
-    } catch (error) {
-      console.error("Outer error:", error);
-      next(error);
-    }
 
+        if (!Array.isArray(products) || products.length === 0) {
+          return res.status(400).json({ message: "Product list is required." });
+        }
 
+        let totalAmount = 0;
+        for (const item of products) {
+          const product = await ProductModel.findById(item.productId);
+          if (!product) {
+            return res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
+          }
+
+          // 🔥 Ensure minimum order quantity is met
+          if (item.quantity < product.minimumOrderQuantity) {
+            return res.status(400).json({
+              message: `You must order at least ${product.minimumOrderQuantity} units of ${product.name}.`,
+            });
+          }
+
+          totalAmount += product.variations[0].price * item.quantity;
+        }
+
+        let dueAmount: number = totalAmount - paidAmount;
+        let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
+
+        if (paymentType === "full") {
+          dueAmount = 0;
+          paymentStatus = "Paid";
+        } else if (paymentType === "partial") {
+          paymentStatus = dueAmount > 0 ? "Partial" : "Paid";
+        } else if (paymentType === "cod") {
+          dueAmount = totalAmount;
+          paidAmount = 0;
+          paymentStatus = "Pending";
+        }
+
+        // ✅ Extract uploaded receipt file paths
+        let receiptUrls: string[] = [];
+        if (req.files && (req.files as any)["receipts"]) {
+          receiptUrls = (req.files as any)["receipts"].map((file: Express.Multer.File) => `/uploads/receipts/${file.filename}`);
+        }
+
+        const newOrder = new OrderModel({
+          userId,
+          items: products.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+          contactName,
+          contactNumber,
+          deliverTo,
+          totalAmount,
+          paidAmount,
+          dueAmount,
+          paymentStatus,
+          receiptUrls,
+          orderStatus: "pending",
+        });
+
+        await newOrder.save();
+
+        return res.status(201).json({
+          message: "Order placed successfully. Proceed to payment.",
+          orderId: newOrder._id,
+          totalAmount,
+          paidAmount,
+          dueAmount,
+          receiptUrls,
+        });
+      } catch (error) {
+        console.error("Order processing error:", error);
+        next(error);
+      }
+    });
   },
-  
+
+
 
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

@@ -1,18 +1,26 @@
 import CategoryModel from "../../models/Category";
 
 export const CategoryService = {
-  create: async (data: { name: string; receipts: string }) => {
-    try {
-      const existingCategory = await CategoryModel.findOne({ name: data.name });
-      if (existingCategory) throw new Error("Category already exists.");
 
-      const category = new CategoryModel(data);
-      await category.save();
-      return category;
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : "Error creating category");
-    }
-  },
+    create: async (data: { name: string; image: string }) => {
+      try {
+        // 🔍 Check if category already exists BEFORE saving the image
+        const existingCategory = await CategoryModel.findOne({ name: data.name });
+        if (existingCategory) {
+          return { error: "Category already exists.", category: existingCategory };
+        }
+  
+        // ✅ Save new category
+        const category = new CategoryModel({ name: data.name, image: data.image });
+        await category.save();
+        return { message: "Category created successfully.", category };
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : "Error creating category");
+      }
+    },
+  
+  
+  
 
   findAll: async () => {
     try {

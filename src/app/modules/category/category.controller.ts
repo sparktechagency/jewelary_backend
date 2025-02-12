@@ -1,52 +1,50 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { CategoryService } from "./category.service";
 import CategoryModel from "../../models/Category";
-import { upload } from "../multer/multer.conf";
+import { uploadCategory, uploadDebug } from "../multer/multer.conf";
+
+
 
 export const CategoryController = {
-    
-        create: async (req: Request, res: Response): Promise<void> => {
-          upload(req, res, async (err: any) => {
-            if (err) {
-              console.error("Multer Error:", err);
-              return res.status(400).json({ message: err.message });
-            }
-      
-            // 🔥 Debugging Logs
-            console.log("Request Body:", req.body);
-            console.log("Uploaded Files:", req.files);
-      
-            try {
-              const { name } = req.body;
-      
-              // ✅ Extract uploaded image file path
-              const image =
-              req.files && "image" in req.files
-                ? (req.files as { [fieldname: string]: Express.Multer.File[] })["image"][0].path
-                : null;
-            
-      
-              if (!name || !image) {
-                return res.status(400).json({ message: "Name and Image are required for category creation." });
-              }
-      
-              const newCategory = new CategoryModel({ name, image });
-              await newCategory.save();
-      
-              res.status(201).json({
-                message: "Category created successfully.",
-                category: newCategory,
-              });
-            } catch (error) {
-              console.error("Category creation error:", error);
-              res.status(500).json({ message: (error as Error).message });
-            }
-          });
-        },
-      
-      
 
-
+    create: async (req: Request, res: Response): Promise<void> => {
+      uploadCategory(req, res, async (err: any) => {
+        if (err) {
+          console.error("🚨 Multer Error:", err);
+          return res.status(400).json({ message: err.message });
+        }
+  
+        console.log("📂 Uploaded File:", req.file);
+        console.log("📝 Request Body:", req.body);
+  
+        try {
+          const { name } = req.body;
+          if (!req.file) {
+            return res.status(400).json({ message: "Image file is required." });
+          }
+  
+          const image = `/uploads/categories/${req.file.filename}`;
+  
+          if (!name || !image) {
+            return res.status(400).json({ message: "Name and Image are required for category creation." });
+          }
+  
+          // 🔍 Check if category exists before proceeding
+          const result = await CategoryService.create({ name, image });
+  
+          if (result.error) {
+            return res.status(409).json(result); // ✅ Return conflict status
+          }
+  
+          res.status(201).json(result);
+        } catch (error) {
+          console.error("🔥 Category creation error:", error);
+          res.status(500).json({ message: (error as Error).message });
+        }
+      });
+    },
+  
+  
 
   findAll: async (_req: Request, res: Response) => {
     try {

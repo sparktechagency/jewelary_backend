@@ -1,36 +1,125 @@
 import { Request, Response } from "express";
 import { ProductService } from "./product.service";
+import { uploadProduct } from "../multer/multer.conf";
 
 export const ProductController = {
 
+  // create: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const productData = req.body;
+
+  //     if (!productData.attributeOptions) {
+  //       res.status(400).json({ message: "attributeOptions is required." });
+  //       return;
+  //     }
+
+  //     if (productData.minimumOrderQuantity && productData.availableQuantity < productData.minimumOrderQuantity) {
+  //       res.status(400).json({
+  //         message: `Minimum order quantity is ${productData.minimumOrderQuantity}. Please increase the order quantity.`,
+  //       });
+  //       return;
+  //     }
+
+  //     const product = await ProductService.create(productData);
+  //     res.status(201).json(product);
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
+  
+
+  // findAll: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const page = parseInt(req.query.page as string) || 1; // Default to page 1
+  //     const limit = 10; // Number of products per page
+
+  //     const { products, totalProducts } = await ProductService.findAll(page, limit);
+
+  //     res.status(200).json({
+  //       page,
+  //       totalPages: Math.ceil(totalProducts / limit),
+  //       totalProducts,
+  //       products,
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message }); // Handle any errors
+  //   }
+  // },
+
   create: async (req: Request, res: Response): Promise<void> => {
-    try {
+    uploadProduct(req, res, async (err: any) => {
+      if (err) {
+        return res.status(400).json({ message: `Multer error: ${err.message}` });
+      }
+
       const productData = req.body;
 
+      productData.availableQuantity = Number(productData.availableQuantity);
+      productData.minimumOrderQuantity = Number(productData.minimumOrderQuantity);
+      productData.deliveryCharge = Number(productData.deliveryCharge);
+
       if (!productData.attributeOptions) {
-        res.status(400).json({ message: "attributeOptions is required." });
-        return;
+        return res.status(400).json({ message: "attributeOptions is required." });
       }
 
-      if (productData.minimumOrderQuantity && productData.availableQuantity < productData.minimumOrderQuantity) {
-        res.status(400).json({
-          message: `Minimum order quantity is ${productData.minimumOrderQuantity}. Please increase the order quantity.`,
+      if (productData.availableQuantity < productData.minimumOrderQuantity) {
+        return res.status(400).json({
+          message: `Minimum order quantity is ${productData.minimumOrderQuantity}. Please increase the available quantity.`,
         });
-        return;
       }
+
+      let imageUrls: string[] = [];
+      if (req.files && (req.files as any)["images"]) {
+        imageUrls = (req.files as any)["images"].map((file: Express.Multer.File) => `/uploads/products/${file.filename}`);
+      }
+
+      productData.imageUrls = imageUrls;
 
       const product = await ProductService.create(productData);
       res.status(201).json(product);
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
+    });
   },
   
+  
+  
+
+  // findAll: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const page = parseInt(req.query.page as string) || 1;
+  //     const limit = 10;
+
+  //     const { products, totalProducts } = await ProductService.findAll(page, limit);
+
+  //     res.status(200).json({
+  //       page,
+  //       totalPages: Math.ceil(totalProducts / limit),
+  //       totalProducts,
+  //       products,
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
+  // findById: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const productId = req.params.id;
+  //     const product = await ProductService.findById(productId);
+
+  //     if (!product) {
+  //       res.status(404).json({ message: "Product not found" });
+  //       return;
+  //     }
+
+  //     res.status(200).json(product); // Return the product if found
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
 
   findAll: async (req: Request, res: Response): Promise<void> => {
     try {
-      const page = parseInt(req.query.page as string) || 1; // Default to page 1
-      const limit = 10; // Number of products per page
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 10;
 
       const { products, totalProducts } = await ProductService.findAll(page, limit);
 
@@ -41,7 +130,7 @@ export const ProductController = {
         products,
       });
     } catch (error) {
-      res.status(500).json({ message: (error as Error).message }); // Handle any errors
+      res.status(500).json({ message: (error as Error).message });
     }
   },
 
@@ -55,7 +144,7 @@ export const ProductController = {
         return;
       }
 
-      res.status(200).json(product); // Return the product if found
+      res.status(200).json(product);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }
