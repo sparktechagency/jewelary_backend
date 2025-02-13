@@ -180,9 +180,10 @@ export const ProductController = {
       const products = await ProductService.search(keyword);
 
       if (products.length === 0) {
-        res.status(404).json({ message: "No products found." });
+        res.status(200).json({ message: "Empty Products", products: [] });
         return;
       }
+      
 
       res.status(200).json(products);
     } catch (error) {
