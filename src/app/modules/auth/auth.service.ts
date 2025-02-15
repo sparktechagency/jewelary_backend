@@ -4,9 +4,9 @@ import { AdminModel } from "../../models/admin.model";
 import { JWTPayload } from "./auth.types";
 
 export const AuthService = {
-  authenticate: async (username: string, password: string) => {
+  authenticate: async (email: string, password: string) => {
     // Look for the admin in the database
-    const admin = await AdminModel.findOne({ username });
+    const admin = await AdminModel.findOne({ email });
     
     // If admin does not exist or password is incorrect
     if (!admin || !bcrypt.compareSync(password, admin.password)) {
@@ -15,7 +15,7 @@ export const AuthService = {
     
     // If credentials are valid, generate the JWT token
     const payload: JWTPayload = {
-      username, role: "admin",
+      email, role: "admin",
       userId: ""
     };
     const token = jwt.sign(
@@ -24,6 +24,6 @@ export const AuthService = {
       { expiresIn: "1d" }
     );
     
-    return { token, role: payload.role, username: payload.username, id: admin._id };
+    return { token, role: payload.role, email: payload.email, id: admin._id };
   },
 };

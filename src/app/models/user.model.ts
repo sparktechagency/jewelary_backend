@@ -18,7 +18,8 @@ interface IUser extends Document {
   resetTokenExpiry?: Date;
   passwordResetTokenForSecurity?: string;
   cart: CartItem[];
-  role: 'user' | 'admin'; 
+  role: 'user' | 'admin';
+  profileImage?: string;
 }
 
 // Define the schema for the user model
@@ -26,6 +27,7 @@ const UserSchema = new Schema<IUser>({
   username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String, unique: true },
+  businessName: {type: String, unique: true},
   password: { type: String, required: true },
   confirmPassword: { type: String, required: true },
   passwordResetToken: { type: String },
@@ -37,6 +39,7 @@ const UserSchema = new Schema<IUser>({
     },
   ],
   role: { type: String, required: true, enum: ['user', 'admin'], default: 'user' }, // ✅ Added role field
+  profileImage: { type: String },
 });
 
 // Create the User model from the schema

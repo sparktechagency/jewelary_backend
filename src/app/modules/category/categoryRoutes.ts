@@ -17,4 +17,5 @@ router.delete("/:id", isAuthenticated, CategoryController.delete);
 router.get("/", CategoryController.findAll);
 router.get("/:id", CategoryController.findById);
 
+
 export default router;

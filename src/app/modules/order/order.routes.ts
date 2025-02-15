@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { OrderController } from "./order.controller";
 import { isAuthenticated, isAdmin } from "../auth/auth.middleware";
+import { getOrdersByStatus } from "./order.status";
+
 
 const router = Router();
 
@@ -14,5 +16,6 @@ router.delete("/:orderId", isAuthenticated, isAdmin, OrderController.deleteOrder
 //custom order routes
 // Admin route to create a custom order
 router.post("/create-custom-order", isAuthenticated, isAdmin, OrderController.createCustomOrderByName);
+router.get("/orders/status/:status", isAuthenticated, isAdmin, getOrdersByStatus);
 
 export default router;

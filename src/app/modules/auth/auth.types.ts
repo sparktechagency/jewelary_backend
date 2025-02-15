@@ -1,11 +1,13 @@
 export interface AdminCredentials {
-  username: string;
+  // username: string;
+  email: string
   password: string;
 }
 
 export interface JWTPayload {
   userId: string;
-  username: string;
+  email:string;
+  // username: string;
   role: string;
 }
 

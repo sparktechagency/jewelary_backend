@@ -80,13 +80,11 @@ export const UserController = {
         expiresIn: "1h",
       });
 
-      res.status(200).json({ message: "Login successful" ,token, userId: user._id});
+      res.status(200).json({ message: "Login successful" ,token, userId: user._id, user: user.username, Phone: user.phoneNumber});
     } catch (error) {
       next(error); // Pass error to middleware
     }
   },
-
-
 
   forgotPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -123,11 +121,13 @@ export const UserController = {
         html: `Your OTP for password reset is <b>${otp}</b>. It will expire in 1 hour.`,
       });
   
-      res.status(200).json({ message: "OTP sent to email.", otp, jwtToken }); // Optionally return the token
+      res.status(200).json({ message: "OTP sent to email.", otp, jwtToken, }); // Optionally return the token
     } catch (error) {
       next(error);
     }
   },
+
+
 
   verifyOtp: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -228,6 +228,47 @@ export const UserController = {
       res.status(401).json({ message: "Invalid or expired token." });
       next(error);
     }
+},
+
+changePassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = (req.user as { id: string }).id; // Extract user ID from token
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Validate input fields
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      res.status(400).json({ message: "All fields are required." });
+      return;
+    }
+
+    // Find user in the database
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    // Check if current password is correct
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      res.status(400).json({ message: "Current password is incorrect." });
+      return;
+    }
+
+    // Check if new passwords match
+    if (newPassword !== confirmPassword) {
+      res.status(400).json({ message: "New password and confirm password do not match." });
+      return;
+    }
+
+    // Hash new password and update user record
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    next(error);
+  }
 },
   
 // Get all users (accessible only to admin)

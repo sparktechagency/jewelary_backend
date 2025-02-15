@@ -55,6 +55,7 @@ export const CategoryController = {
     }
   },
 
+
   findById: async (req: Request, res: Response) => {
     try {
       const category = await CategoryService.findById(req.params.id);

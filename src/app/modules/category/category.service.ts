@@ -1,4 +1,5 @@
 import CategoryModel from "../../models/Category";
+import ProductModel from "../../models/Product";
 
 export const CategoryService = {
 
@@ -18,7 +19,8 @@ export const CategoryService = {
         throw new Error(error instanceof Error ? error.message : "Error creating category");
       }
     },
-  
+
+
   
   
 

@@ -47,6 +47,6 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
 
 export const generateToken = (userId: string, role: string): string => {
   const secretKey = process.env.JWT_SECRET || "default_secret";
-  return jwt.sign({ userId, role }, secretKey, { expiresIn: "1d" }); // Ensure `userId` instead of `id`
+  return jwt.sign({ userId, role }, secretKey, { expiresIn: "4d" }); // Ensure `userId` instead of `id`
 };
 

@@ -49,9 +49,73 @@ export const PaymentController = {
   //   }
   // },
  
+  // processPayment: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const { orderId, amount } = req.body;
+  //     const userId = (req.user as { id: string }).id;
+  
+  //     const order = await OrderModel.findById(orderId);
+  //     if (!order) {
+  //       res.status(404).json({ message: "Order not found." });
+  //       return;
+  //     }
+  
+  //     if (order.paymentStatus === "Paid") {
+  //       res.status(400).json({ message: "Order is already fully paid." });
+  //       return;
+  //     }
+  
+  //     if (amount > order.dueAmount) {
+  //       res.status(400).json({ message: "Payment exceeds due amount." });
+  //       return;
+  //     }
+  
+  //     // Create Stripe Payment Intent
+  //     const paymentIntent = await stripe.paymentIntents.create({
+  //       amount: amount * 100, // Convert to cents
+  //       currency: "usd",
+  //       payment_method_types: ["card"],
+  //       metadata: { userId, orderId },
+  //     });
+  
+  //     // Update Payment Model
+  //     await PaymentModel.create({
+  //       userId,
+  //       orderId,
+  //       amount,
+  //       paidAmount: amount,
+  //       dueAmount: order.dueAmount - amount,
+  //       paymentType: "partial",
+  //       status: "pending",
+  //       paymentIntentId: paymentIntent.id,
+  //     });
+  
+  //     // Update Order Payment Details
+  //     order.paidAmount += amount;
+  //     order.dueAmount -= amount;
+  //     if (order.dueAmount === 0) order.paymentStatus = "Paid";
+  //     else order.paymentStatus = "Partial";
+  //     await order.save();
+  
+  //     res.status(200).json({
+  //       clientSecret: paymentIntent.client_secret,
+  //       message: "Partial payment intent created.",
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // },
+  
   processPayment: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { orderId, amount } = req.body;
+      const { orderId } = req.body;
+      let amount = parseInt(req.body.amount, 10); // Convert to integer
+  
+      if (isNaN(amount) || amount <= 0) {
+        res.status(400).json({ message: "Invalid amount provided." });
+        return;
+      }
+
       const userId = (req.user as { id: string }).id;
   
       const order = await OrderModel.findById(orderId);
@@ -69,6 +133,9 @@ export const PaymentController = {
         res.status(400).json({ message: "Payment exceeds due amount." });
         return;
       }
+  
+      // ✅ Debugging step: Log amount before sending to Stripe
+      console.log("Processing payment with amount:", amount);
   
       // Create Stripe Payment Intent
       const paymentIntent = await stripe.paymentIntents.create({
@@ -105,7 +172,7 @@ export const PaymentController = {
       next(error);
     }
   },
-  
+
 
   handleWebhook: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

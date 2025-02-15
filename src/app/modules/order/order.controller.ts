@@ -13,6 +13,7 @@ import { uploadOrder } from "../multer/multer.conf";
 export const OrderController = {
 
 
+  
   placeOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     uploadOrder(req, res, async (err: any) => {
       if (err) {
@@ -122,6 +123,30 @@ export const OrderController = {
     });
   },
 
+  getMyOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Ensure req.user is defined
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized. User not found." });
+      return;
+    }
+
+    const { status } = req.query;
+    const filter: any = { userId: req.user.id }; // Access userId safely
+
+    if (status) {
+      filter.orderStatus = status; // Apply status filter if provided
+    }
+
+    const orders = await OrderModel.find(filter).populate("items.productId");
+
+    res.status(200).json({ orders });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    next(error);
+  }
+},
+
 
 
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -230,21 +255,54 @@ export const OrderController = {
   },
   
   
+  // getAllOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     console.log("🔍 Fetching Orders...");
+  //     const orders = await OrderModel.find().populate("userId items.productId").lean();
+  //     console.log("🔹 Orders Found:", orders.length);
+  //     if (!orders || orders.length === 0) {
+  //       res.status(404).json({ message: "No orders found." });
+  //       return;
+  //     }
+  //     res.status(200).json({ orders });
+  //   } catch (error) {
+  //     console.error("Error Fetching Orders:", error);
+  //     next(error);
+  //   }
+  // },
+
+
   getAllOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       console.log("🔍 Fetching Orders...");
-      const orders = await OrderModel.find().populate("userId items.productId").lean();
+  
+      // Extract status from query params
+      const { status } = req.query;
+  
+      // Initialize a filter object
+      let filter: any = {};
+  
+      // Apply order status filtering if a status is provided
+      if (status) {
+        filter.orderStatus = status.toString(); // Ensure it's a string
+      }
+  
+      // Fetch orders using the filter
+      const orders = await OrderModel.find(filter).populate("items.productId").lean();
       console.log("🔹 Orders Found:", orders.length);
-      if (!orders || orders.length === 0) {
-        res.status(404).json({ message: "No orders found." });
+  
+      if (orders.length === 0) {
+        res.status(404).json({ message: "No orders found for the specified status." });
         return;
       }
+  
       res.status(200).json({ orders });
     } catch (error) {
       console.error("Error Fetching Orders:", error);
       next(error);
     }
   },
+  
 
   getOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -266,7 +324,8 @@ export const OrderController = {
         res.status(400).json({ message: "Invalid order ID format." });
         return;
       }
-      const validStatuses = ["pending", "accepted", "cancelled", "shipped", "delivered"];
+      const validStatuses = ["pending", "running", "completed", "custom", "cancelled"];
+      
       if (!validStatuses.includes(status)) {
         res.status(400).json({ message: "Invalid order status." });
         return;
@@ -345,5 +404,5 @@ export const OrderController = {
   },
 };
 
-export const { placeOrder, getAllOrders, getOrderStatus, updateOrderStatus, deleteOrder } = OrderController;
+export const { placeOrder, getAllOrders, getOrderStatus, updateOrderStatus, deleteOrder,createCustomOrderByName } = OrderController;
 

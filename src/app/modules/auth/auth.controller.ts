@@ -3,9 +3,9 @@ import { AuthService } from "./auth.service";
 
 export const AuthController = {
   login: async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     try {
-      const result = await AuthService.authenticate(username, password);
+      const result = await AuthService.authenticate(email, password);
       res.status(200).json(result);
     } catch (error) {
       // Safely handle the `error` type
