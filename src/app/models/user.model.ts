@@ -12,6 +12,8 @@ interface IUser extends Document {
   email: string;
   phoneNumber: string;
   businessName: string;
+  location: string | null; // location can be null, not unique
+  // role: { type: String, default: "user" },
   password: string;
   confirmPassword: string;
   passwordResetToken?: string;
@@ -28,6 +30,7 @@ const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String, unique: true },
   businessName: {type: String, unique: true},
+  location: { type: String, default: null },
   password: { type: String, required: true },
   confirmPassword: { type: String, required: true },
   passwordResetToken: { type: String },

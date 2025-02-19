@@ -123,32 +123,6 @@ export const OrderController = {
     });
   },
 
-  getMyOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    // Ensure req.user is defined
-    if (!req.user) {
-      res.status(401).json({ message: "Unauthorized. User not found." });
-      return;
-    }
-
-    const { status } = req.query;
-    const filter: any = { userId: req.user.id }; // Access userId safely
-
-    if (status) {
-      filter.orderStatus = status; // Apply status filter if provided
-    }
-
-    const orders = await OrderModel.find(filter).populate("items.productId");
-
-    res.status(200).json({ orders });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    next(error);
-  }
-},
-
-
-
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userName, products, paymentType, paidAmount } = req.body;
@@ -219,6 +193,12 @@ export const OrderController = {
         paymentStatus = "Pending";
       }
   
+      // Define missing variables
+      const contactName = req.body.contactName || "Default Contact Name";
+      const contactNumber = req.body.contactNumber || "0000000000";
+      const deliverTo = req.body.deliverTo || "Default Address";
+      const receiptUrls: string[] = [];
+
       // Create the order
       const newOrder = new OrderModel({
         userId,
@@ -226,10 +206,14 @@ export const OrderController = {
           productId: item.productId,
           quantity: item.quantity,
         })),
+        contactName,
+        contactNumber,
+        deliverTo,
         totalAmount,
-        paidAmount: paidAmount || 0,
+        paidAmount,
         dueAmount,
         paymentStatus,
+        receiptUrls,
         orderStatus: "pending",
       });
   
@@ -304,17 +288,30 @@ export const OrderController = {
   },
   
 
+  // getOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const userId = (req.user as { id: string }).id;
+  //     const orders = await OrderModel.find({ userId })
+  //       .populate("items.productId")
+  //       .select("items totalAmount paymentStatus orderStatus createdAt");
+  //     res.status(200).json({ orders });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // },
+
   getOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req.user as { id: string }).id;
       const orders = await OrderModel.find({ userId })
         .populate("items.productId")
-        .select("items totalAmount paymentStatus orderStatus createdAt");
+        .select("items totalAmount paidAmount dueAmount paymentStatus orderStatus createdAt");
+  
       res.status(200).json({ orders });
     } catch (error) {
       next(error);
     }
-  },
+  },  
 
   updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

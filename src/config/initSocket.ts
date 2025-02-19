@@ -15,7 +15,7 @@ export const initSocket = (server: any) => {
 
     // Handle sending messages
     socket.on('sendMessage', async (data) => {
-      const {  receiverId, content, senderType } = data;
+      const {  receiverId, content, senderType,messageSource } = data;
 
       try {
         const message = MessageService.sendMessage(
@@ -23,7 +23,8 @@ export const initSocket = (server: any) => {
           receiverId,
           content,
           senderType,
-          data.productId // Add the missing productId argument
+          data.productId, // Add the missing productId argument
+          messageSource,
         );
 
         // Emit the message to the receiver's room

@@ -14,10 +14,10 @@ const router = express.Router();
 
 router.post( "/product-attributes",isAuthenticated, isAdmin,ProductAttributeController.create); // Protected route for creating product attributes
 router.post( "/categories",isAuthenticated, isAdmin, CategoryController.create); // Protected route for creating product attributes
-router.get("/admin/payments", isAuthenticated, PaymentController.viewPayments);
-router.get("/admin/payments/:id", isAuthenticated, PaymentController.viewPayments);
+// router.get("/admin/payments", isAuthenticated, PaymentController.viewPayments);
+// router.get("/admin/payments/:id", isAuthenticated, PaymentController.viewPayments);
 router.get( "/product-attributes", isAuthenticated, isAdmin, ProductAttributeController.getAll ); // Protected route for fetching product attributes
-router.get("/orders", isAuthenticated, isAdmin, OrderController.getAllOrders);
+router.get("/orders", isAuthenticated, OrderController.getAllOrders);
 router.get("/auth/count",isAuthenticated, isAdmin, UserController.getTotalUsers)
 router.put("/product-attributes/:id", isAuthenticated, isAdmin, ProductAttributeController.update); // Protected route for updating product attributes
 router.delete("/product-attributes/:id", isAuthenticated, isAdmin, ProductAttributeController.delete); // Protected route for deleting product attributes

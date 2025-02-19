@@ -25,7 +25,7 @@ const apiRoutes = [
   // product-attributes
   { path: '/orders', route: OrderRoutes },
   { path: '/admin', route: adminRoutes },
-  { path: '/payments/pay', route: PaymentRoutes },
+  { path: '/payments', route: PaymentRoutes },
   { path: '/admin/payments', route: PaymentRoutes },
   { path: '/messages', route: MessageRoutes },,
   { path: '/earnings/total', route: EarningRoutes },

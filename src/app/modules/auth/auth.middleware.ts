@@ -25,8 +25,6 @@ export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunct
 };
 
 
-
-
 // export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
 //   if (!req.user || req.user.role !== 'admin') {
 //     res.status(403).json({ message: "Access denied. Admins only." });
@@ -49,4 +47,5 @@ export const generateToken = (userId: string, role: string): string => {
   const secretKey = process.env.JWT_SECRET || "default_secret";
   return jwt.sign({ userId, role }, secretKey, { expiresIn: "4d" }); // Ensure `userId` instead of `id`
 };
+
 

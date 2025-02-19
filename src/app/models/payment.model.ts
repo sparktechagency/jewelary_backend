@@ -6,9 +6,9 @@ interface IPayment extends Document {
   amount: number;
   paidAmount: number;
   dueAmount: number;
-  paymentType: "full" | "partial" | "cod" | "service_charge";
+  paymentType: "full" | "partial" | "cod";
   paymentIntentId?: string;
-  status: "pending" | "succeeded" | "failed";
+  status: "pending" | "partial" | "succeeded" | "failed";
   createdAt: Date;
 }
 
@@ -18,9 +18,9 @@ const PaymentSchema = new Schema<IPayment>({
   amount: { type: Number, required: true },
   paidAmount: { type: Number, required: true },
   dueAmount: { type: Number, required: true },
-  paymentType: { type: String, enum: ["full", "partial", "cod", "service_charge"], required: true },
+  paymentType: { type: String, enum: ["full", "partial", "cod",], required: true },
   paymentIntentId: { type: String },
-  status: { type: String, enum: ["pending", "succeeded", "failed"], default: "pending" },
+  status: { type: String, enum: ["pending", "Paid", "failed"], default: "pending" },
   createdAt: { type: Date, default: Date.now },
 });
 

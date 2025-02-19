@@ -23,7 +23,9 @@ export const profileController = {
             return;
           }
       
-          res.status(200).json(user); // Return the entire user object
+          res.status(200).json({
+            user
+          }); // Return the entire user object
         } catch (error) {
           next(error);
         }
@@ -57,7 +59,7 @@ export const profileController = {
         }
 
         // Destructure fields from body
-        const { username, phoneNumber, businessName } = req.body;
+        const { username, phoneNumber, businessName, location } = req.body;
 
         // Check if phone number is already used by another user
         if (phoneNumber && phoneNumber !== user.phoneNumber) {
@@ -77,10 +79,17 @@ export const profileController = {
         // Update user fields with new data
         user.username = username || user.username;
         user.businessName = businessName || user.businessName;
+        user.location = location || user.location;
 
         // Save the updated user object
         await user.save();
-        res.status(200).json({ message: "Profile updated successfully.", user,businessName });
+        res.status(200).json({ 
+          message: "Profile updated successfully.",
+           user,
+           businessName, 
+          
+          //  imagePath: user.profileImage 
+          });
       } catch (error) {
         next(error);
       }

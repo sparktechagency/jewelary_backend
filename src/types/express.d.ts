@@ -13,3 +13,7 @@ interface AuthRequest extends Request {
   };
 }
 import jwt from 'jsonwebtoken';
+
+interface Request {
+  user?: { id: string; role?: string; email?: string };
+}

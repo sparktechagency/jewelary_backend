@@ -7,56 +7,137 @@ import { emailHelper } from "../mailer/mailer";
 
 export const UserController = {
 
+  
+
+  
+  // register: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const { username, email, phoneNumber, businessName, location, password, confirmPassword, role } = req.body;
+  
+  //     // Validate required fields
+  //     if (!username || !email || !phoneNumber || !businessName || !password || !confirmPassword) {
+  //       console.log("Missing required fields:", req.body);
+  //        res.status(400).json({ message: "All fields are required" });
+  //        return
+  //       }
+  
+  //     // Check if the user already exists by email
+  //     const existingUser = await UserModel.findOne({ email });
+  //     if (existingUser) {
+  //       console.log("User already exists:", email);
+  //        res.status(400).json({ message: "User already exists" });
+  //        return
+  //       }
+  
+  //     // Check if the phone number already exists
+  //     const existingPhone = await UserModel.findOne({ phoneNumber });
+  //     if (existingPhone) {
+  //       console.log("Phone number already exists:", phoneNumber);
+  //        res.status(400).json({ message: "Phone number already exists" });
+  //     return
+  //       }
+  
+  //     // Hash password
+  //     const hashedPassword = await bcrypt.hash(password, 10);
+  
+  //     // Create a new user with location and role being optional
+  //     const newUser = new UserModel({
+  //       username,
+  //       email,
+  //       phoneNumber,
+  //       businessName,
+  //       location: location || null,  // Set location to null if not provided
+  //       role: role || "user",  // Default role to "user" if not provided
+  //       password: hashedPassword,
+  //       confirmPassword: hashedPassword,
+  //     });
+  
+  //     // Save the user to the database
+  //     await newUser.save();
+  //     console.log("New user registered:", email);
+  //     res.status(201).json({ message: "User registered successfully" });
+  //   } catch (error) {
+  //     console.error("Error in register:", error);
+  //     next(error);
+  //   }
+  // },
+  
   register: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log("Register endpoint hit with data:", req.body); // Debug request data
+      // Destructure the request body to get the fields
+      const { username, email, phoneNumber, businessName, location, password, confirmPassword, role } = req.body;
   
-      if (Object.keys(req.body).length === 0) {
-        console.log("Empty request body received.");
-        res.status(400).json({ message: "Request body cannot be empty" });
-        return;
-      }
-  
-      const { username, email, phoneNumber, businessName, password, confirmPassword, role } = req.body;
-  
-      if (!username || !email || !phoneNumber || !businessName || !password || !confirmPassword || role) {
+      // Validate required fields
+      if (!username || !email || !phoneNumber || !businessName || !password || !confirmPassword) {
         console.log("Missing required fields:", req.body);
         res.status(400).json({ message: "All fields are required" });
         return;
       }
   
-      const existingUser = await UserModel.findOne({ email });
-      if (existingUser) {
-        console.log("User already exists:", email);
-        res.status(400).json({ message: "User already exists" });
+      // Check if the username already exists
+      const existingUsername = await UserModel.findOne({ username });
+      if (existingUsername) {
+        console.log("Username already exists:", username);
+        res.status(400).json({ message: "Username already exists. Please provide a valid username." });
         return;
       }
   
+      // Check if the email already exists
+      const existingEmail = await UserModel.findOne({ email });
+      if (existingEmail) {
+        console.log("Email already exists:", email);
+        res.status(400).json({ message: "Email already exists. Please provide a valid email." });
+        return;
+      }
+  
+      // Check if the phone number already exists
       const existingPhone = await UserModel.findOne({ phoneNumber });
       if (existingPhone) {
         console.log("Phone number already exists:", phoneNumber);
-        res.status(400).json({ message: "Phone number already exists" });
+        res.status(400).json({ message: "Phone number already exists. Please provide a valid phone number." });
         return;
       }
   
+      // Check if the business name already exists
+      const existingBusinessName = await UserModel.findOne({ businessName });
+      if (existingBusinessName) {
+        console.log("Business name already exists:", businessName);
+        res.status(400).json({ message: "Business name already exists. Please provide a valid business name." });
+        return;
+      }
+  
+      // Ensure that password and confirmPassword match
+      if (password !== confirmPassword) {
+        console.log("Passwords do not match.");
+        res.status(400).json({ message: "Passwords do not match. Please confirm your password." });
+        return;
+      }
+  
+      // Hash password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create a new user with optional location and role
       const newUser = new UserModel({
         username,
         email,
         phoneNumber,
         businessName,
+        location: location || null,  // Set location to null if not provided
+        role: role || "user",  // Default role to "user" if not provided
         password: hashedPassword,
-        confirmPassword: hashedPassword,
+        confirmPassword: hashedPassword,  // Confirm password is hashed too
       });
   
+      // Save the new user to the database
       await newUser.save();
       console.log("New user registered:", email);
       res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
       console.error("Error in register:", error);
-      next(error);
+      next(error);  // Pass the error to the next middleware (error handler)
     }
   },
+  
   
   
 

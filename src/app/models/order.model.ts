@@ -56,7 +56,7 @@ const OrderSchema = new Schema<IOrder>(
     receiptUrls: [{ type: String }], // Use only this
     dueAmount: { type: Number, required: true },
     paymentStatus: { type: String, enum: ["Pending", "Partial", "Paid"], default: "Pending" },
-    orderStatus: { type: String, enum: ["pending", "running", "completed", "custom", "cancelled"], default: "pending" },
+    orderStatus: { type: String, enum: ["pending", "running", "completed", "custom","cod", "cancelled"], default: "pending" },
   },
   { timestamps: true } // ✅ Automatically adds createdAt & updatedAt
 );
