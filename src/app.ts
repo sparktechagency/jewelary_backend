@@ -39,11 +39,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 
-// app.use("/api/payments", paymentRoutes);
-
-// // ✅ Other middlewares come after
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 

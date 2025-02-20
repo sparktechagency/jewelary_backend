@@ -15,6 +15,7 @@ interface IProduct extends Document {
   deliveryCharge: number,
   attributeOptions: mongoose.Schema.Types.ObjectId; // Reference to ProductAttribute
   variations: {
+    _id: any;
   
     color: string;
     size: string;

@@ -9,6 +9,7 @@ import  EarningRoutes  from '../app/modules/earning/earningRoutes';
 import AuthRoutes from '../app/modules/auth/auth.routes'
 import productAttributeRoutes from '../../src/app/modules/product/productAttributeRoutes'
 import categoryRoutes from '../app/modules/category/categoryRoutes'
+import legalDocumentRoute from '../app/modules/legalDoc/legalDocument.routes';
 // import productRoute from '../app/modules/product/product.routes'
 
 
@@ -19,6 +20,10 @@ const apiRoutes = [
   { path: '/auth', route: AuthRoutes },
   { path: '/users', route: UserRoutes },
   { path: '/auth/users', route: UserRoutes },
+  { path: '/legal-documents', route:  legalDocumentRoute},
+  // { path: '/legal-documents', route: legalDocumentRoute },
+  // { path: '/auth/users', route: UserRoutes },
+  // { path: '/auth/users', route: UserRoutes },
   { path: '/products', route: ProductRoutes },
   { path: '/product-attributes', route: productAttributeRoutes },
   { path: '/categories', route: categoryRoutes},

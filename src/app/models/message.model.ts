@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMessage extends Document {
-  // sender: mongoose.Types.ObjectId;
+  sender: mongoose.Types.ObjectId;
   receiver: mongoose.Types.ObjectId;
   content: string;
   senderType: 'user' | 'admin';
@@ -11,7 +11,7 @@ export interface IMessage extends Document {
 
 const MessageSchema = new Schema<IMessage>(
   {
-    // sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
     senderType: { type: String, enum: ['user', 'admin'], required: true }, // ✅ Ensure it's required

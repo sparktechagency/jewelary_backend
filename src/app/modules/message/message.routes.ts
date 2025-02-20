@@ -14,6 +14,6 @@ router.get('/conversation/:partnerId', isAuthenticated, MessageController.getCon
 router.patch('/message/read/:messageId', isAuthenticated, MessageController.markAsRead);
 
 // Admin Route to get all messages (Admin can see all messages)
-router.get('/admin/messages', isAuthenticated, MessageController.getAllMessages);
+router.get('/admin/:userId', isAuthenticated, MessageController.getAllMessages);
 
 export default router;
