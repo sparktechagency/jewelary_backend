@@ -264,6 +264,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { MessageService } from './message.service';
 import { MessageModel } from '../../models/message.model';
+import { io } from '../../../app';
 
 export class MessageController {
   
@@ -360,6 +361,8 @@ export class MessageController {
       // Send the message via the MessageService
       const message = await MessageService.sendMessage(receiverId, content, senderType, productId, messageSource);
 
+        // Emit socket event for real-time message delivery
+      io.to(receiverId).emit("receiveMessage", message);
       res.status(201).json(message);  // Return the sent message
     } catch (error) {
       console.error("Error sending message:", error);
@@ -367,32 +370,55 @@ export class MessageController {
     }
   }
 
+  // static async getConversation(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     if (!req.user || !req.user.id) {
+  //        res.status(403).json({ message: "Unauthorized access" });
+  //        return
+  //     }
+
+  //     const userId = req.user.id;
+  //     const partnerId = req.params.partnerId;
+
+  //     // If the logged-in user is an admin, they can access all conversations
+  //     if (req.user.role === 'admin') {
+  //       const conversation = await MessageService.getConversation(userId, partnerId);
+  //        res.json(conversation);  // Return the conversation for the admin
+  //        return
+  //     }
+
+  //     // If the logged-in user is not an admin, they can only view their own conversations
+  //     const conversation = await MessageService.getConversation(userId, partnerId);
+    
+  //      res.json(conversation);  // Return the conversation for the user
+  //   } catch (error) {
+  //     console.error("Error retrieving conversation:", error);
+  //     res.status(500).json({ message: "Error retrieving conversation", error });
+  //   }
+  // }
+
   static async getConversation(req: Request, res: Response): Promise<void> {
     try {
       if (!req.user || !req.user.id) {
-         res.status(403).json({ message: "Unauthorized access" });
-         return
-      }
-
+               res.status(403).json({ message: "Unauthorized access" });
+               return
+            }
       const userId = req.user.id;
       const partnerId = req.params.partnerId;
 
-      // If the logged-in user is an admin, they can access all conversations
-      if (req.user.role === 'admin') {
-        const conversation = await MessageService.getConversation(userId, partnerId);
-         res.json(conversation);  // Return the conversation for the admin
-         return
+      if (!partnerId) {
+        res.status(400).json({ message: "Partner ID is required" });
+        return;
       }
 
-      // If the logged-in user is not an admin, they can only view their own conversations
       const conversation = await MessageService.getConversation(userId, partnerId);
-    
-       res.json(conversation);  // Return the conversation for the user
+      res.json(conversation);
     } catch (error) {
       console.error("Error retrieving conversation:", error);
       res.status(500).json({ message: "Error retrieving conversation", error });
     }
   }
+
 
   static async markAsRead(req: Request, res: Response): Promise<void> {
     try {

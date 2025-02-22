@@ -6,8 +6,8 @@ import mongoose from "mongoose";
 import { io } from "../../../app"; // Adjust the path as needed
 import ProductModel from "../../models/Product";
 import multer from "multer";
-import ProductAttribute from "../../models/ProductAttribute";
-import ProductAttributeModel from "../../models/ProductAttribute";
+import ProductAttribute from "../../models/attribute/ProductAttribute";
+import ProductAttributeModel from "../../models/attribute/ProductAttribute";
 import { uploadOrder } from "../multer/multer.conf";
 
 export const OrderController = {

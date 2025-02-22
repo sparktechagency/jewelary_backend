@@ -17,6 +17,11 @@ export const initSocket = (server: any) => {
     socket.on('sendMessage', async (data) => {
       const {  receiverId, content, senderType,messageSource } = data;
 
+      if (!receiverId || !content || !senderType) {
+        socket.emit("error", { message: "Missing required fields" });
+        return;
+      }
+
       try {
         const message = MessageService.sendMessage(
           //   senderId,

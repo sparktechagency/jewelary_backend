@@ -15,6 +15,7 @@ router.post("/forgot-password", UserController.forgotPassword); // Request Passw
 router.post("/reset-password", UserController.resetPassword); // Reset Password (Verify OTP and set new password)
 router.post("/verify-otp", UserController.verifyOtp);
 router.get("/count", isAuthenticated, UserController.getTotalUsers); //get total users
+router.get("/alldetails",isAuthenticated,UserController.userAllOrderDetails)
 router.get("/search", isAuthenticated, UserController.searchUser); // search user by email
 router.delete("/delete/:id", isAuthenticated, UserController.deleteUser); //delete user
 router.get("/profile", isAuthenticated, profileController.getUserProfile); // GET user profile

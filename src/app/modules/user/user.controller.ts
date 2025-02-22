@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { emailHelper } from "../mailer/mailer";
+import OrderModel from "../../models/order.model";
 
 export const UserController = {
 
@@ -356,7 +357,7 @@ changePassword: async (req: Request, res: Response, next: NextFunction): Promise
 getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Find all users and select their _id and email
-    const users = await UserModel.find({}, "_id email");
+    const users = await UserModel.find({}, "_id  username email");
 
     // Get the total number of users
     const totalUsers = users.length;
@@ -365,8 +366,115 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
       totalUsers,
       users: users.map(user => ({
         id: user._id,    // Include user ID
-        email: user.email
+        name: user.username,
+        email: user.email,
+        
       })),  
+    });
+  } catch (error) {
+    next(error); // Pass error to middleware
+  }
+},
+
+// userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//   try {
+//     // Fetch all orders along with user details by populating userId
+//     const orders = await OrderModel.find({})
+//       .populate("userId", "username email phoneNumber") // Populate user details
+//       .select("orderStatus totalAmount paidAmount dueAmount paymentStatus orderStatus userId contactName contactNumber deliverTo") // Select necessary fields
+
+//     // Calculate the necessary order statistics
+//     const totalOrders = orders.length;
+//     const cancelledOrders = orders.filter(order => order.orderStatus === "cancelled").length;
+//     const pendingOrders = orders.filter(order => order.orderStatus === "pending").length;
+//     const runningOrders = orders.filter(order => order.orderStatus === "running").length;
+//     const completedOrders = orders.filter(order => order.orderStatus === "completed").length;
+
+//     // Calculate total amount paid and total amount due
+//     const totalPaid = orders.reduce((sum, order) => sum + order.paidAmount, 0);
+//     const totalDue = orders.reduce((sum, order) => sum + order.dueAmount, 0);
+
+//     // Map through the orders to get user details along with order stats
+//     const orderDetails = orders.map(order => ({
+//       orderStatus: order.orderStatus,
+//       totalAmount: order.totalAmount,
+//       paidAmount: order.paidAmount,
+//       dueAmount: order.dueAmount,
+//       paymentStatus: order.paymentStatus,
+//       contactName: order.contactName,
+//       contactNumber: order.contactNumber,
+//       deliverTo: order.deliverTo,
+//       user: {
+//         name: order.userId.username, // Access populated fields
+//         email: order.userId.email,
+//         phoneNumber: order.userId.phoneNumber
+//       }
+//     }));
+
+//     res.json({
+//       totalOrders,
+//       cancelledOrders,
+//       pendingOrders,
+//       runningOrders,
+//       completedOrders,
+//       totalPaid,
+//       totalDue,
+//       orderDetails
+//     });
+//   } catch (error) {
+//     next(error); // Pass error to middleware
+//   }
+// },
+
+
+userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // Fetch all orders along with user details by populating userId
+    const orders = await OrderModel.find({})
+      .populate("userId", "username email phoneNumber")  // Populate user details
+      .select("orderStatus totalAmount paidAmount dueAmount paymentStatus orderStatus userId contactName contactNumber deliverTo") // Select necessary fields
+
+    // Calculate the necessary order statistics
+    const totalOrders = orders.length;
+    const cancelledOrders = orders.filter(order => order.orderStatus === "cancelled").length;
+    const pendingOrders = orders.filter(order => order.orderStatus === "pending").length;
+    const runningOrders = orders.filter(order => order.orderStatus === "running").length;
+    const completedOrders = orders.filter(order => order.orderStatus === "completed").length;
+
+    // Calculate total amount paid and total amount due
+    const totalPaid = orders.reduce((sum, order) => sum + order.paidAmount, 0);
+    const totalDue = orders.reduce((sum, order) => sum + order.dueAmount, 0);
+
+    // Map through the orders to get user details along with order stats
+    const orderDetails = orders.map(order => ({
+      orderStatus: order.orderStatus,
+      totalAmount: order.totalAmount,
+      paidAmount: order.paidAmount,
+      dueAmount: order.dueAmount,
+      paymentStatus: order.paymentStatus,
+      contactName: order.contactName,
+      contactNumber: order.contactNumber,
+      deliverTo: order.deliverTo,
+      user: order.userId ? {  // Check if userId exists
+        name: order.userId.username || 'N/A',  // Fallback if username is missing
+        email: order.userId.email || 'N/A',    // Fallback if email is missing
+        phoneNumber: order.userId.phoneNumber || 'N/A'  // Fallback if phoneNumber is missing
+      } : {  // In case userId is null
+        name: 'Unknown User',
+        email: 'Unknown Email',
+        phoneNumber: 'Unknown Phone Number'
+      }
+    }));
+
+    res.json({
+      totalOrders,
+      cancelledOrders,
+      pendingOrders,
+      runningOrders,
+      completedOrders,
+      totalPaid,
+      totalDue,
+      orderDetails
     });
   } catch (error) {
     next(error); // Pass error to middleware

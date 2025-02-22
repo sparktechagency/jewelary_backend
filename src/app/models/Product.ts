@@ -1,30 +1,20 @@
 // import mongoose, { Schema, Document } from "mongoose";
 
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-interface IProduct extends Document {
+export interface IProduct extends Document {
   name: string;
   details: string;
-  // category: string;
-  category: {
-    _id: string;
-    name: string;
-  } | null;
+  category: mongoose.Types.ObjectId;
   availableQuantity: number;
   minimumOrderQuantity: number;
-  deliveryCharge: number,
-  attributeOptions: mongoose.Schema.Types.ObjectId; // Reference to ProductAttribute
-  variations: {
-    _id: any;
-  
-    color: string;
-    size: string;
-    thickness: string;
-    quantity: number;
-    price: number;
-  }[];
+  deliveryCharge: number;
+  price: number;
+  colors: mongoose.Types.ObjectId[];
+  sizes: mongoose.Types.ObjectId[];
+  thicknesses: mongoose.Types.ObjectId[];
+  imageUrls: string[];
 }
-
 
 const ProductSchema: Schema = new Schema(
   {
@@ -32,32 +22,27 @@ const ProductSchema: Schema = new Schema(
     details: { type: String, required: true },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category", // ✅ Ensure correct reference
+      ref: "Category",
       required: true,
     },
     availableQuantity: { type: Number, required: true },
     minimumOrderQuantity: { type: Number, required: true },
     deliveryCharge: { type: Number, required: true },
-    attributeOptions: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductAttribute",
-      required: true,
-    },
-    variations: [
-      {
-        color: { type: String, required: true },
-        size: { type: String, required: true },
-        thickness: { type: String, required: true },
-        quantity: { type: Number, required: true },
-        price: { type: Number, required: true },
-      },
+    price: { type: Number, required: true },
+    colors: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true }
+    ],
+    sizes: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Size", required: true }
+    ],
+    thicknesses: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true }
     ],
     imageUrls: [{ type: String }],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const ProductModel = mongoose.model<IProduct>("Product", ProductSchema);
 export default ProductModel;
+
