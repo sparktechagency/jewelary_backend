@@ -40,10 +40,21 @@ export const CategoryService = {
     }
   },
 
-  update: async (id: string, updateData: { name?: string; receipts?: string }) => {
+
+  update: async (id: string, updateData: { active?: boolean; name?: string; image?: string }) => {
     try {
-      return await CategoryModel.findByIdAndUpdate(id, updateData, { new: true });
+      // If no fields are provided, return null (handled in controller)
+      if (Object.keys(updateData).length === 0) {
+        return null;
+      }
+
+      // Perform the update and return the updated category
+      const updatedCategory = await CategoryModel.findByIdAndUpdate(id, updateData, { new: true });
+
+      // Return the updated category or null if not found
+      return updatedCategory;
     } catch (error) {
+      console.error("Error updating category:", error);
       throw new Error("Error updating category.");
     }
   },

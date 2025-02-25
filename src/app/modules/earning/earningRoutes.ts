@@ -4,7 +4,7 @@ import { isAuthenticated, isAdmin } from "../auth/auth.middleware";
 
 const router = Router();
 
-router.get("/", isAuthenticated, isAdmin, EarningsController.getTotalEarnings);
+router.get("/", isAuthenticated, isAdmin, EarningsController.getEarningsDashboard);
 router.get("/", isAuthenticated, isAdmin, EarningsController.getMonthlyEarnings);
 router.get("/", isAuthenticated, isAdmin, EarningsController.getYearlyEarnings);
 router.get("/", isAuthenticated, isAdmin, EarningsController.getPendingPayments);

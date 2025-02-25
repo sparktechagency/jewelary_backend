@@ -13,7 +13,7 @@ router.get("/my-orders", isAuthenticated, getMyOrders);
 
 // Admin routes
 router.get("/", isAuthenticated, isAdmin, OrderController.getAllOrders);
-router.put("/update-status", isAuthenticated, isAdmin, OrderController.updateOrderStatus);
+router.patch("/:id/update-status", isAuthenticated, isAdmin, OrderController.updateOrderStatus);
 router.delete("/:orderId", isAuthenticated, isAdmin, OrderController.deleteOrder);
 //custom order routes
 // Admin route to create a custom order

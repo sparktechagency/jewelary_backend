@@ -142,32 +142,100 @@ export const UserController = {
   
   
 
+  // login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const { email, password } = req.body;
+
+  //     const user = await UserModel.findOne({ email });
+  //     if (!user) {
+  //       res.status(400).json({ message: "Invalid credentials" });
+  //       return;
+  //     }
+
+  //     const isPasswordValid = await bcrypt.compare(password, user.password);
+  //     if (!isPasswordValid) {
+  //       res.status(400).json({ message: "Invalid credentials" });
+  //       return;
+  //     }
+
+  //     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "default_secret", {
+  //       expiresIn: "1h",
+  //     });
+
+  //     res.status(200).json({ message: "Login successful" ,token, userId: user._id, user: user.username, Phone: user.phoneNumber});
+  //   } catch (error) {
+  //     next(error); // Pass error to middleware
+  //   }
+  // },
+
   login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
-
+  
       const user = await UserModel.findOne({ email });
       if (!user) {
         res.status(400).json({ message: "Invalid credentials" });
         return;
       }
-
+  
+      // Compare password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         res.status(400).json({ message: "Invalid credentials" });
         return;
       }
-
+  
+      // Check if account is active
+      if (!user.active) {
+        res.status(403).json({ message: "Your account is deactive. Please contact support." });
+        return;
+      }
+  
+      // Create JWT token
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "default_secret", {
         expiresIn: "1h",
       });
-
-      res.status(200).json({ message: "Login successful" ,token, userId: user._id, user: user.username, Phone: user.phoneNumber});
+  
+      res.status(200).json({ message: "Login successful", token, userId: user._id, user: user.username, Phone: user.phoneNumber });
     } catch (error) {
-      next(error); // Pass error to middleware
+      next(error);
     }
   },
-
+  updateActiveStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { active } = req.body;
+  
+      // Validate that active is a boolean
+      if (typeof active !== "boolean") {
+        res.status(400).json({ message: "Active status must be a boolean value." });
+        return;
+      }
+  
+      // Check that the requester is an admin.
+      // This assumes your authentication middleware attaches the user object to req.user.
+      if (!req.user || (req.user as any).role !== "admin") {
+        res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
+        return;
+      }
+  
+      // Find the user to update
+      const user = await UserModel.findById(id);
+      if (!user) {
+        res.status(404).json({ message: "User not found." });
+        return;
+      }
+  
+      user.active = active;
+      await user.save();
+  
+      res.status(200).json({ message: "User active status updated.", active: user.active });
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  
   forgotPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;
@@ -482,26 +550,76 @@ userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Pr
 },
 
 
+// searchUser: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//   const { email } = req.body; // Access email from query parameters
+//   if (!email) {
+//     res.status(400).json({ message: "Email is required" });
+//     return;
+//   }
+  
+//   try {
+//     const user = await UserModel.findOne({ email });
+//     if (!user) {
+//       res.status(404).json({ message: "User not found" });
+//       return;
+//     }
+
+//     res.json(user);
+//   } catch (error) {
+//     next(error); // Pass error to middleware
+//   }
+// },
+
+
+
+
+
 searchUser: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { email } = req.body; // Access email from query parameters
+  const { email } = req.body;
   if (!email) {
     res.status(400).json({ message: "Email is required" });
     return;
   }
   
   try {
+    // Find the user by email
     const user = await UserModel.findOne({ email });
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
-
-    res.json(user);
+    
+    // Find all orders for the user
+    const orders = await OrderModel.find({ userId: user._id });
+    
+    // Compute totals
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter(o => o.orderStatus === "pending").length;
+    const runningOrders = orders.filter(o => o.orderStatus === "running").length;
+    const completeOrders = orders.filter(o => o.orderStatus === "completed").length;
+    const cancelledOrders = orders.filter(o => o.orderStatus === "cancelled").length;
+    const totalPaid = orders.reduce((sum, o) => sum + o.paidAmount, 0);
+    const totalDue = orders.reduce((sum, o) => sum + o.dueAmount, 0);
+    
+    // Construct full URL for the profile image
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const profileImageUrl = user.profileImage ? baseUrl + user.profileImage : null;
+    
+    res.json({
+      user,
+      profileImageUrl,
+      totalOrders,
+      pendingOrders,
+      runningOrders,
+      completeOrders,
+      cancelledOrders,
+      totalPaid,
+      totalDue
+    });
   } catch (error) {
-    next(error); // Pass error to middleware
+    next(error);
   }
 },
-
 
 // Delete user (accessible only to admin)
 deleteUser: async (req: Request, res: Response, next: NextFunction): Promise<void> => {

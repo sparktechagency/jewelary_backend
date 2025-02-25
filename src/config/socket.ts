@@ -16,6 +16,8 @@ export const initSocket = (server: any) => {
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
     });
+    socket.on("orderStatusUpdate", (data) => {
+      console.log("Received order status update:", data);
 
     // Handle sending messages with productId
     socket.on("sendMessage", async (data) => {
@@ -60,5 +62,5 @@ export const initSocket = (server: any) => {
   });
 
   return io;
-};
+})};
 

@@ -57,7 +57,7 @@ export const ProductAttributeController = {
       }
   
       // Create a new color and save it
-      const newColor = new ColorModel({ colorName, colorCode });
+      const newColor = new ColorModel({ colorName, colorCode});
       await newColor.save();
   
       res.status(201).json(newColor);  // Return the newly created color
@@ -96,37 +96,78 @@ export const ProductAttributeController = {
     }
   },
   
+  // createThikness:async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const { colorName, colorCode } = req.body;
   
- 
-// Create a new thickness
-createThickness: async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { thickness } = req.body;
+  //     // Ensure both colorName and colorCode are provided
+  //     if (!colorName || !colorCode) {
+  //       res.status(400).json({ message: "Color name and color code are required." });
+  //       return;
+  //     }
+  
+  //     // Check if the color already exists
+  //     const existingColor = await ColorModel.findOne({ colorName });
+  //     if (existingColor) {
+  //       res.status(400).json({ message: "Color name already exists." });
+  //       return;
+  //     }
+  
+  //     // Check if the colorCode already exists
+  //     const existingColorCode = await ColorModel.findOne({ colorCode });
+  //     if (existingColorCode) {
+  //       res.status(400).json({ message: "Color code already exists." });
+  //       return;
+  //     }
+  
+  //     // Create a new color and save it
+  //     const newColor = new ColorModel({ colorName, colorCode });
+  //     await newColor.save();
+  
+  //     res.status(201).json(newColor);  // Return the newly created color
+  //   } catch (error) {
+  //     res.status(500).json({ message: (error as Error).message });
+  //   }
+  // },
+  
 
-    if (!thickness) {
-      res.status(400).json({ message: "Thickness is required" });
-      return;
+  
+  createThickness: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { thickness } = req.body;
+  
+      // Check that both thickness and price are provided
+      if (!thickness) {
+        res.status(400).json({ message: "Thickness and price are required." });
+        return;
+      }
+  
+      const existingThickness = await ThicknessModel.findOne({ thickness});
+      if (existingThickness) {
+        res.status(400).json({ message: "Thickness already exists" });
+        return;
+      }
+  
+      // Include price when creating the new thickness document
+      const newThickness = new ThicknessModel({ thickness });
+      await newThickness.save();
+  
+      res.status(201).json({
+        message: "Thickness created successfully",
+        data: newThickness,
+      });
+    } catch (error: any) {
+      if (error.code === 11000) {
+        res.status(400).json({ message: "Duplicate thickness value", error });
+      } else {
+        res.status(500).json({ message: "Internal server error", error });
+      }
     }
-
-    // Check if the thickness already exists
-    const existingThickness = await ThicknessModel.findOne({ thickness });
-    if (existingThickness) {
-      res.status(400).json({ message: "Thickness already exists" });
-      return;
-    }
-
-    // Create a new thickness and save it with the default active status (true)
-    const newThickness = new ThicknessModel({ thickness });
-    await newThickness.save();
-
-    res.status(201).json(newThickness);
-  } catch (error) {
-    res.status(500).json({ message: (error as Error).message });
-  }
-},
-
-
-// Admin function to update thickness status (active or inactive)
+  },
+  
+  
+  
+  // Admin function to update thickness status (active or inactive)
 updateThickness : async (req: Request, res: Response): Promise<void> => {
   try {
     const { thicknessId, active } = req.body;
@@ -175,6 +216,26 @@ getThickness: async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: (error as Error).message });
   }
 },
+getInactiveThickness: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all colors that are inactive
+    const inactiveThickness = await ColorModel.find({ active: false });
+
+    res.status(200).json({ inactiveThickness });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
+getactiveThickness: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all colors that are inactive
+    const activeThickness = await ColorModel.find({ active: true });
+
+    res.status(200).json({ activeThickness });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
 
 getColors: async (req: Request, res: Response): Promise<void> => {
   try {
@@ -187,16 +248,26 @@ getColors: async (req: Request, res: Response): Promise<void> => {
   }
 },
 
-// getInactiveColors: async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     // Fetch all colors that are inactive
-//     const inactiveColors = await ColorModel.find({ active: false });
+getInactiveColors: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all colors that are inactive
+    const inactiveColors = await ColorModel.find({ active: false });
 
-//     res.status(200).json({ inactiveColors });
-//   } catch (error) {
-//     res.status(500).json({ message: (error as Error).message });
-//   }
-// },
+    res.status(200).json({ inactiveColors });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
+getactiveColors: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all colors that are inactive
+    const activeColors = await ColorModel.find({ active: true });
+
+    res.status(200).json({ activeColors });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
 
 getSizes: async (req: Request, res: Response): Promise<void> => {
   try {
@@ -209,16 +280,26 @@ getSizes: async (req: Request, res: Response): Promise<void> => {
   }
 },
 
-// getInactiveSizes: async (req: Request, res: Response): Promise<void> => {
-//   try {
-//     // Fetch all sizes that are inactive
-//     const inactiveSizes = await SizeModel.find({ active: false });
+getInactiveSizes: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all sizes that are inactive
+    const inactiveSizes = await SizeModel.find({ active: false });
 
-//     res.status(200).json({ inactiveSizes });
-//   } catch (error) {
-//     res.status(500).json({ message: (error as Error).message });
-//   }
-// },
+    res.status(200).json({ inactiveSizes });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
+getactiveSizes: async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all sizes that are inactive
+    const activeSizes = await SizeModel.find({ active: true });
+
+    res.status(200).json({ activeSizes });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+},
 
 
 // updateColor: async (req: Request, res: Response): Promise<void> => {

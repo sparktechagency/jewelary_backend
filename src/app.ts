@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
@@ -9,25 +10,41 @@ import { PaymentController } from "./app/modules/payment/payment.controller";
 import path from "path";
 // import paymentRoutes from "./app/modules/payment/routes"
 import authRoutes from "./app/modules/auth/auth.routes";
+import { profileController } from "./app/modules/user/profile.controller";
+import { ProductController } from "./app/modules/product/product.controller";
+import multer from "multer";
+import { uploadProduct } from "./app/modules/multer/multer.conf";
 // import apiRoutes from "../src/routes/admin.routes"
 dotenv.config();
-
+const upload = multer();
 const app = express();
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: ["https://jowel.binarybards.online", "http://10.0.70.206:3000", "http://localhost:3000"], credentials: true
+}))
+app.use(cors({
+  origin: ["http://localhost:3000"], // Make sure the client domain is allowed
+  credentials: true,
+}))
+// app.use(express.json());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.post(
   "/api/payments/webhook",
-  express.raw({ type: "application/json" }),  
+  express.raw({ type: "application/json" }),
   PaymentController.handleWebhook
 );
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.post("/api/products",uploadProduct, ProductController.create)
 const PORT = process.env.PORT || "5000";
 // ✅ Create HTTP server
 const server = createServer(app);
 
 // ✅ Initialize Socket.io on the same server
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: { origin: "*", credentials: true },
 });
 
 // ✅ Socket.io connection handling
@@ -40,12 +57,11 @@ io.on("connection", (socket) => {
 });
 
 
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); 
+
+
 // ✅ Use middlewares
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.urlencoded({ extended: true }));
 
 
 // ✅ Use the consolidated router from index.ts for API routes

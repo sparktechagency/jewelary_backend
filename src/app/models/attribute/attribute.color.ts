@@ -34,6 +34,7 @@ import mongoose, { Schema, Document } from "mongoose";
 interface IColor extends Document {
   colorName: string;
   colorCode: string;
+  // price: number;
   active: boolean;
 }
 
@@ -62,6 +63,11 @@ const ColorSchema: Schema = new Schema(
         message: "This are only String.",
       },
     },
+    // price: {
+    //   type: Number,
+    //   required: true,
+    //   min: [0, "Price must be a positive number"], // Ensure price is not negative
+    // },
     active: { type: Boolean, default: true },  // By default, color is active
   },
   { timestamps: true }

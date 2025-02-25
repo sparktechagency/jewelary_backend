@@ -2,13 +2,15 @@
 import { Router } from 'express';
 import { UserController } from './user.controller';
 import { isAuthenticated } from '../auth/auth.middleware';
+import {verifyToken}  from '../auth/auth.middleware';
 import { profile } from 'console';
 import { profileController } from './profile.controller';
 // import { getTotalUsers } from './user.controller';
 
 const router = Router();
 
-
+// Only admin can update active status. Use verifyToken middleware to ensure the user is logged in.
+router.patch("/:id/status", verifyToken, UserController.updateActiveStatus);
 router.post('/register', UserController.register); // Register user route
 router.post('/login', UserController.login); // Login user route
 router.post("/forgot-password", UserController.forgotPassword); // Request Password Reset (Send OTP)

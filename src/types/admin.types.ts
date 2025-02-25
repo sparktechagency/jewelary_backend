@@ -1,4 +1,6 @@
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
+
+
 
 export interface IAdmin extends Document {
   username: string;
@@ -6,9 +8,12 @@ export interface IAdmin extends Document {
   phone: string;
   password: string;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  passwordResetToken?: string;  // For OTP reset
+  resetTokenExpiry?: Date;      // For OTP expiry
+  _id: mongoose.Types.ObjectId;  // Explicitly define the type for _id
 }
+
+
 
 export type AdminCreateDTO = {
   username: string;

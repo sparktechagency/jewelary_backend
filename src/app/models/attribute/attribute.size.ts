@@ -2,6 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 interface ISize extends Document {
   size: string;
+  value: string;
+  // price: number;
   active: boolean;
 }
 
@@ -26,6 +28,11 @@ const SizeSchema: Schema = new Schema(
         return this.size;
       },
     },
+    // price: {
+    //   type: Number,
+    //   required: true,
+    //   min: [0, "Price must be a positive number"], // Ensure price is not negative
+    // },
     active: { type: Boolean, default: true }, // By default, size is active
   },
   { timestamps: true }

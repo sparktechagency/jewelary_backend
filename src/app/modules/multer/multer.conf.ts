@@ -103,6 +103,12 @@ export const uploadProduct = multer({
   { name: "images", maxCount: 10 }
 ]);
 
+// export const uploadProduct = multer({
+//   storage: createStorage("products"),
+//   limits: { fileSize: 5 * 1024 * 1024, files: 10 },
+//   fileFilter
+// }).any();
+
 export const uploadOrder = multer({
   storage: createStorage("receipts"),
   limits: { fileSize: 5 * 1024 * 1024, files: 5 }, // ✅ Max 5 files

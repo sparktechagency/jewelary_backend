@@ -31,8 +31,8 @@ export const profileController = {
         }
       },
       
- 
-
+   
+      
   updateUserProfile: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // First, use the multer middleware to handle image upload
     uploadCategory(req, res, async (err) => {
@@ -95,6 +95,9 @@ export const profileController = {
       }
     });
   },
-
-
+      
+      
+    
 };
+
+

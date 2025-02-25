@@ -246,6 +246,168 @@ export const ProductService = {
 // },
 
 
+// create: async (productData: any) => {
+//   try {
+//     const {
+//       name,
+//       details,
+//       category,
+//       minimumOrderQuantity,
+//       availableQuantity,
+//       deliveryCharge,
+//       price,
+//       color,    // expected as array of IDs
+//       size,     // expected as array of IDs
+//       thickness // expected as array of IDs
+//     } = productData;
+    
+//     // Validate availableQuantity vs minimumOrderQuantity
+//     if (availableQuantity < minimumOrderQuantity) {
+//       throw new Error(
+//         `Available quantity (${availableQuantity}) must be greater than or equal to minimum order quantity (${minimumOrderQuantity}).`
+//       );
+//     }
+    
+//     // Ensure these fields are arrays (if not, wrap them)
+//     const colorIds = Array.isArray(color) ? color : [color];
+//     const sizeIds = Array.isArray(size) ? size : [size];
+//     const thicknessIds = Array.isArray(thickness) ? thickness : [thickness];
+    
+//     // Validate ObjectIds
+//     const validateObjectIds = (ids: string[], type: string) => {
+//       return ids.map((id) => {
+//         if (!mongoose.Types.ObjectId.isValid(id)) {
+//           throw new Error(`Invalid ${type} ID: ${id}`);
+//         }
+//         return new mongoose.Types.ObjectId(id);
+//       });
+//     };
+    
+//     const colorObjectIds = validateObjectIds(colorIds, "color");
+//     const sizeObjectIds = validateObjectIds(sizeIds, "size");
+//     const thicknessObjectIds = validateObjectIds(thicknessIds, "thickness");
+    
+//     // Fetch and validate attribute data from their models
+//     const [colorData, sizeData, thicknessData] = await Promise.all([
+//       ColorModel.find({ _id: { $in: colorObjectIds }, active: true }),
+//       SizeModel.find({ _id: { $in: sizeObjectIds }, active: true }),
+//       ThicknessModel.find({ _id: { $in: thicknessObjectIds }, active: true })
+//     ]);
+    
+//     if (colorData.length !== colorObjectIds.length) {
+//       throw new Error("Some colors do not exist or are inactive.");
+//     }
+//     if (sizeData.length !== sizeObjectIds.length) {
+//       throw new Error("Some sizes do not exist or are inactive.");
+//     }
+//     if (thicknessData.length !== thicknessObjectIds.length) {
+//       throw new Error("Some thicknesses do not exist or are inactive.");
+//     }
+    
+//     // Create the new product without generating variations
+//     const newProduct = new ProductModel({
+//       name,
+//       details,
+//       category,
+//       availableQuantity,
+//       minimumOrderQuantity,
+//       deliveryCharge,
+//       price,
+//       colors: colorObjectIds,
+//       sizes: sizeObjectIds,
+//       thicknesses: thicknessObjectIds,
+//       file: productData.fileUrls || []
+//     });
+    
+//     await newProduct.save();
+//     return newProduct;
+//   } catch (error) {
+//     console.error("Product creation error:", error);
+//     throw error;
+//   }
+// },
+
+// create: async (productData: any) => {
+//   try {
+//     const {
+//       name,
+//       details,
+//       category,
+//       minimumOrderQuantity,
+//       availableQuantity,
+//       deliveryCharge,
+//       price,
+//       color,    // expected as array of IDs
+//       size,     // expected as array of IDs
+//       thickness, // expected as array of IDs
+//       fileUrls,
+//     } = productData;
+
+//     if (availableQuantity < minimumOrderQuantity) {
+//       throw new Error(
+//         `Available quantity (${availableQuantity}) must be greater than or equal to minimum order quantity (${minimumOrderQuantity}).`
+//       );
+//     }
+
+//     // Ensure these fields are arrays (if not, wrap them)
+//     const colorIds = Array.isArray(color) ? color : [color];
+//     const sizeIds = Array.isArray(size) ? size : [size];
+//     const thicknessIds = Array.isArray(thickness) ? thickness : [thickness];
+
+//     const validateObjectIds = (ids: string[], type: string) => {
+//       return ids.map((id) => {
+//         if (!mongoose.Types.ObjectId.isValid(id)) {
+//           throw new Error(`Invalid ${type} ID: ${id}`);
+//         }
+//         return new mongoose.Types.ObjectId(id);
+//       });
+//     };
+
+//     const colorObjectIds = validateObjectIds(colorIds, "color");
+//     const sizeObjectIds = validateObjectIds(sizeIds, "size");
+//     const thicknessObjectIds = validateObjectIds(thicknessIds, "thickness");
+
+//     // Fetch and validate attribute data from their models (only active ones)
+//     const [colorData, sizeData, thicknessData] = await Promise.all([
+//       ColorModel.find({ _id: { $in: colorObjectIds }, active: true }),
+//       SizeModel.find({ _id: { $in: sizeObjectIds }, active: true }),
+//       ThicknessModel.find({ _id: { $in: thicknessObjectIds }, active: true })
+//     ]);
+
+//     if (colorData.length !== colorObjectIds.length) {
+//       throw new Error("Some selected colors are inactive. Please choose accessible colors.");
+//     }
+//     if (sizeData.length !== sizeObjectIds.length) {
+//       throw new Error("Some selected sizes are inactive. Please choose accessible sizes.");
+//     }
+//     if (thicknessData.length !== thicknessObjectIds.length) {
+//       throw new Error("Some selected thicknesses are inactive. Please choose accessible thicknesses.");
+//     }
+
+//     // Create the new product
+//     const newProduct = new ProductModel({
+//       name,
+//       details,
+//       category,
+//       availableQuantity,
+//       minimumOrderQuantity,
+//       deliveryCharge,
+//       price,
+//       colors: colorObjectIds,
+//       sizes: sizeObjectIds,
+//       thicknesses: thicknessObjectIds,
+//       file: fileUrls || []
+//     });
+
+//     await newProduct.save();
+//     return newProduct;
+//   } catch (error) {
+//     console.error("Product creation error:", error);
+//     throw error;
+//   }
+// },
+
+
 create: async (productData: any) => {
   try {
     const {
@@ -255,70 +417,101 @@ create: async (productData: any) => {
       minimumOrderQuantity,
       availableQuantity,
       deliveryCharge,
-      price,
-      color,    // expected as array of IDs
-      size,     // expected as array of IDs
-      thickness // expected as array of IDs
+      variations, // variations as an array of objects
+      fileUrls,
     } = productData;
+
+    // Check for required fields
+    if (!name || !details || !category) {
+      throw new Error("Name, details, and category are required.");
+    }
     
-    // Validate availableQuantity vs minimumOrderQuantity
-    if (availableQuantity < minimumOrderQuantity) {
+    if (Number(availableQuantity) < Number(minimumOrderQuantity)) {
       throw new Error(
         `Available quantity (${availableQuantity}) must be greater than or equal to minimum order quantity (${minimumOrderQuantity}).`
       );
     }
-    
-    // Ensure these fields are arrays (if not, wrap them)
-    const colorIds = Array.isArray(color) ? color : [color];
-    const sizeIds = Array.isArray(size) ? size : [size];
-    const thicknessIds = Array.isArray(thickness) ? thickness : [thickness];
-    
-    // Validate ObjectIds
-    const validateObjectIds = (ids: string[], type: string) => {
-      return ids.map((id) => {
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-          throw new Error(`Invalid ${type} ID: ${id}`);
-        }
-        return new mongoose.Types.ObjectId(id);
-      });
+
+    if (!Array.isArray(variations) || variations.length === 0) {
+      throw new Error("At least one variation is required.");
+    }
+
+    // Helper to validate and convert an id string to ObjectId
+    const validateAndConvert = (id: string, type: string): mongoose.Types.ObjectId => {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error(`Invalid ${type} ID: ${id}`);
+      }
+      return new mongoose.Types.ObjectId(id);
     };
+
+    // Validate each variation and convert fields to ObjectIds
+    variations.forEach((v: any) => {
+      v.color = validateAndConvert(v.color, "color");
+      v.size = validateAndConvert(v.size, "size");
+      v.thickness = validateAndConvert(v.thickness, "thickness");
+
+      // Validate variation price and quantity
+      const priceVal = parseFloat(v.price);
+      if (isNaN(priceVal)) {
+        throw new Error("Invalid variation price.");
+      }
+      v.price = priceVal;
+
+      v.quantity = Number(v.quantity);
+      if (isNaN(v.quantity)) {
+        throw new Error("Invalid variation quantity.");
+      }
+    });
+
+    // Compute product price from variations (using the lowest variation price)
+    const computedPrice = Math.min(...variations.map((v: any) => v.price));
+
+    // Validate and convert category
+    const categoryObjId = validateAndConvert(category, "category");
+
+    // Extract unique color, size, and thickness IDs from variations
+    const uniqueIds = (ids: mongoose.Types.ObjectId[]) =>
+      Array.from(new Set(ids.map(id => id.toString()))).map(id => new mongoose.Types.ObjectId(id));
+
+    const uniqueColorIds = uniqueIds(variations.map((v: any) => v.color));
+    const uniqueSizeIds = uniqueIds(variations.map((v: any) => v.size));
+    const uniqueThicknessIds = uniqueIds(variations.map((v: any) => v.thickness));
     
-    const colorObjectIds = validateObjectIds(colorIds, "color");
-    const sizeObjectIds = validateObjectIds(sizeIds, "size");
-    const thicknessObjectIds = validateObjectIds(thicknessIds, "thickness");
-    
-    // Fetch and validate attribute data from their models
+    // Debug logging
+    console.log("Unique Color IDs:", uniqueColorIds);
+
+    // Fetch and validate attribute data from their models (only active ones)
     const [colorData, sizeData, thicknessData] = await Promise.all([
-      ColorModel.find({ _id: { $in: colorObjectIds }, active: true }),
-      SizeModel.find({ _id: { $in: sizeObjectIds }, active: true }),
-      ThicknessModel.find({ _id: { $in: thicknessObjectIds }, active: true })
+      ColorModel.find({ _id: { $in: uniqueColorIds }, active: true }),
+      SizeModel.find({ _id: { $in: uniqueSizeIds }, active: true }),
+      ThicknessModel.find({ _id: { $in: uniqueThicknessIds }, active: true }),
     ]);
-    
-    if (colorData.length !== colorObjectIds.length) {
-      throw new Error("Some colors do not exist or are inactive.");
+
+    console.log("Active Colors Found:", colorData);
+
+    if (colorData.length !== uniqueColorIds.length) {
+      throw new Error("Some selected colors are inactive. Please choose accessible colors.");
     }
-    if (sizeData.length !== sizeObjectIds.length) {
-      throw new Error("Some sizes do not exist or are inactive.");
+    if (sizeData.length !== uniqueSizeIds.length) {
+      throw new Error("Some selected sizes are inactive. Please choose accessible sizes.");
     }
-    if (thicknessData.length !== thicknessObjectIds.length) {
-      throw new Error("Some thicknesses do not exist or are inactive.");
+    if (thicknessData.length !== uniqueThicknessIds.length) {
+      throw new Error("Some selected thicknesses are inactive. Please choose accessible thicknesses.");
     }
-    
-    // Create the new product without generating variations
+
+    // Create and save the product document
     const newProduct = new ProductModel({
       name,
       details,
-      category,
+      category: categoryObjId,
       availableQuantity,
       minimumOrderQuantity,
       deliveryCharge,
-      price,
-      colors: colorObjectIds,
-      sizes: sizeObjectIds,
-      thicknesses: thicknessObjectIds,
-      imageUrls: productData.imageUrls || []
+      price: computedPrice,
+      variations, // Save the variations array with full details
+      file: fileUrls || []
     });
-    
+
     await newProduct.save();
     return newProduct;
   } catch (error) {
@@ -326,6 +519,7 @@ create: async (productData: any) => {
     throw error;
   }
 },
+
 
 
 

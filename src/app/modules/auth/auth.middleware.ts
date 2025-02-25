@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../../../types/express';
 import jwt from 'jsonwebtoken';
+import UserModel from '../../models/user.model';
+import mongoose from 'mongoose';
 
 
 export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunction): void => {
@@ -24,6 +26,26 @@ export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
+export const verifyToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No token provided." });
+      return;
+    }
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
+    req.user = { id: (decoded.userId).toString(), role: decoded.role }; // Adjust as needed
+    next();
+  } catch (error) {
+    console.error("JWT verification error:", error);
+    res.status(401).json({ message: "Invalid or expired token." });
+  }
+  
+};
 
 // export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
 //   if (!req.user || req.user.role !== 'admin') {

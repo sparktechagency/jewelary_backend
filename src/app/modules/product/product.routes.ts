@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ProductController } from "./product.controller";
 import { isAuthenticated } from "../auth/auth.middleware"; // Import the middleware
+import { get } from "http";
 
 
 const router = Router();
@@ -9,7 +10,7 @@ const router = Router();
 router.post("/", isAuthenticated, ProductController.create); // Only admins can create products
 router.put("/:id", isAuthenticated, ProductController.update); // Only admins can update products
 router.delete("/:id", isAuthenticated, ProductController.delete); // Only admins can delete products
-
+router.get("/best-selling",isAuthenticated, ProductController.getBestSellingProducts)
 // Public access to find all products and find by id
 router.get("/", ProductController.findAll);
 router.get("/search", ProductController.search);
