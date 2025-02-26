@@ -176,6 +176,7 @@ const OrderSchema: Schema = new Schema(
     paymentStatus: { type: String, enum: ["Pending", "Partial", "Paid"], required: true },
     orderStatus: { type: String, enum: ["pending", "running", "completed", "custom", "cancelled"], required: true },
     createdAt: { type: Date, default: Date.now },
+    
   },
   { timestamps: true }
 );

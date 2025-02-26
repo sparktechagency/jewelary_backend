@@ -33,12 +33,13 @@ const apiRoutes = [
   { path: '/payments', route: PaymentRoutes },
   { path: '/admin/payments', route: PaymentRoutes },
   { path: '/messages', route: MessageRoutes },,
-  { path: '/earnings/total', route: EarningRoutes },
-  { path: '/earnings/monthly', route: EarningRoutes },
-  { path: '/earnings/yearly', route: EarningRoutes },
-  { path: '/earnings/pending', route: EarningRoutes },
-  { path: '/earnings/manual', route: EarningRoutes },
-  { path: '/earnings/today', route: EarningRoutes },
+
+  { path: '/earnings', route: EarningRoutes },
+  // { path: '/earnings/monthly', route: EarningRoutes },
+  // { path: '/earnings/yearly', route: EarningRoutes },
+  // { path: '/earnings/pending', route: EarningRoutes },
+  // { path: '/earnings/manual', route: EarningRoutes },
+  // { path: '/earnings/today', route: EarningRoutes },
 ];
 apiRoutes.forEach(route => {
   if (route) {

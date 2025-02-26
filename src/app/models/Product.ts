@@ -57,6 +57,7 @@ export interface IProduct extends Document {
   minimumOrderQuantity: number;
   deliveryCharge: number;
   file: string[];
+  active: boolean;
   variations: {
     color: mongoose.Types.ObjectId;
     size: mongoose.Types.ObjectId;
@@ -64,6 +65,7 @@ export interface IProduct extends Document {
     quantity: number;
     price: number;
   }[];
+  createdAt: Date;
 }
 
 const ProductSchema: Schema = new Schema(
@@ -75,6 +77,7 @@ const ProductSchema: Schema = new Schema(
     minimumOrderQuantity: { type: Number, required: true },
     deliveryCharge: { type: Number, required: true },
     file: [{ type: String }],
+    active: { type: Boolean, default: true },
     variations: [
       {
         color: { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true },
@@ -84,10 +87,10 @@ const ProductSchema: Schema = new Schema(
         price: { type: Number, required: true },
       },
     ],
+    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
 const ProductModel = mongoose.model<IProduct>("Product", ProductSchema);
 export default ProductModel;
-

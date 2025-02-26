@@ -9,6 +9,7 @@ const router = Router();
 // Apply isAuthenticated for create, update, and delete routes
 router.post("/", isAuthenticated, ProductController.create); // Only admins can create products
 router.put("/:id", isAuthenticated, ProductController.update); // Only admins can update products
+router.patch("/:id", ProductController.updateProductStatus);
 router.delete("/:id", isAuthenticated, ProductController.delete); // Only admins can delete products
 router.get("/best-selling",isAuthenticated, ProductController.getBestSellingProducts)
 // Public access to find all products and find by id

@@ -133,71 +133,7 @@ export const ProductController = {
   // Optionally, update findById to populate as well:
   
 
-    create: async (req: Request, res: Response): Promise<void> => {
-      try {
-        // Basic required fields check
-        if (!req.body.name || !req.body.details || !req.body.category) {
-          res.status(400).json({ message: "Name, details, and category are required." });
-          return;
-        }
-  
-        // Parse variations (expecting a JSON string)
-        let variations = [];
-        try {
-          variations = typeof req.body.variations === "string" ? JSON.parse(req.body.variations) : req.body.variations;
-        } catch (e) {
-           res.status(400).json({ message: "Invalid variations format." });
-           return
-        }
-  
-        // Build fileUrls from uploaded images if available
-        let fileUrls: string[] = [];
-        if (req.files && (req.files as any)["images"]) {
-          const projectRoot = path.resolve(__dirname, '../../../');
-          fileUrls = (req.files as any)["images"].map((file: Express.Multer.File) => {
-            let relPath = path.relative(projectRoot, file.path);
-            if (!relPath.startsWith(path.sep)) {
-              relPath = path.sep + relPath;
-            }
-            return relPath;
-          });
-        } else if (req.body.file) {
-          try {
-            fileUrls = typeof req.body.file === "string" ? JSON.parse(req.body.file) : req.body.file;
-          } catch (e) {
-            fileUrls = [];
-          }
-        }
-  
-        // Build productData from the request body
-        const productData = {
-          name: req.body.name,
-          details: req.body.details,
-          category: req.body.category,
-          availableQuantity: req.body.availableQuantity,
-          minimumOrderQuantity: req.body.minimumOrderQuantity,
-          deliveryCharge: req.body.deliveryCharge,
-          variations,
-          fileUrls,
-        };
-  
-        // Create product via service
-        const product = await ProductService.create(productData);
-  
-        // Retrieve the created product with populated category and variations references
-        const populatedProduct = await ProductModel.findById(product._id)
-          .populate("category")
-          .populate("variations.color")
-          .populate("variations.size")
-          .populate("variations.thickness")
-          .exec();
-  
-        res.status(201).json(populatedProduct);
-      } catch (error: any) {
-        console.error("Product creation error:", error);
-        res.status(500).json({ message: error.message });
-      }
-    },
+   
 
   // findAll: async (req: Request, res: Response): Promise<void> => {
   //   try {
@@ -257,7 +193,101 @@ export const ProductController = {
   //   }
   // },
 
- 
+  create: async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Basic required fields check
+      if (!req.body.name || !req.body.details || !req.body.category) {
+        res.status(400).json({ message: "Name, details, and category are required." });
+        return;
+      }
+
+      // Parse variations (expecting a JSON string)
+      let variations = [];
+      try {
+        variations = typeof req.body.variations === "string" ? JSON.parse(req.body.variations) : req.body.variations;
+      } catch (e) {
+         res.status(400).json({ message: "Invalid variations format." });
+         return
+      }
+
+      // Build fileUrls from uploaded images if available
+      let fileUrls: string[] = [];
+      if (req.files && (req.files as any)["images"]) {
+        const projectRoot = path.resolve(__dirname, '../../../');
+        fileUrls = (req.files as any)["images"].map((file: Express.Multer.File) => {
+          let relPath = path.relative(projectRoot, file.path);
+          if (!relPath.startsWith(path.sep)) {
+            relPath = path.sep + relPath;
+          }
+          return relPath;
+        });
+      } else if (req.body.file) {
+        try {
+          fileUrls = typeof req.body.file === "string" ? JSON.parse(req.body.file) : req.body.file;
+        } catch (e) {
+          fileUrls = [];
+        }
+      }
+
+      // Build productData from the request body
+      const productData = {
+        name: req.body.name,
+        details: req.body.details,
+        category: req.body.category,
+        availableQuantity: req.body.availableQuantity,
+        minimumOrderQuantity: req.body.minimumOrderQuantity,
+        deliveryCharge: req.body.deliveryCharge,
+        variations,
+        fileUrls,
+      };
+
+      // Create product via service
+      const product = await ProductService.create(productData);
+
+      // Retrieve the created product with populated category and variations references
+      const populatedProduct = await ProductModel.findById(product._id)
+        .populate("category")
+        .populate("variations.color")
+        .populate("variations.size")
+        .populate("variations.thickness")
+        .exec();
+
+      res.status(201).json(populatedProduct);
+    } catch (error: any) {
+      console.error("Product creation error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  },
+
+  updateProductStatus: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { productId } = req.params;
+      const { active } = req.body;
+
+      // Check if 'active' is provided and is a boolean
+      if (typeof active !== "boolean") {
+        res.status(400).json({ message: "Invalid status. 'active' must be true or false." });
+        return;
+      }
+
+      // Find the product
+      const product = await ProductModel.findById(productId);
+      if (!product) {
+        res.status(404).json({ message: "Product not found." });
+        return;
+      }
+
+      // ✅ Update product status
+      product.active = active;
+      await product.save();
+
+      res.status(200).json({ message: `Product status updated to ${active ? "Available" : "Not Available"}.`, product });
+    } catch (error) {
+      console.error("Error updating product status:", error);
+      res.status(500).json({ message: "Internal Server Error." });
+    }
+  },
+
   findAll: async (req: Request, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;

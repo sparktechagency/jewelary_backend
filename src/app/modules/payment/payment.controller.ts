@@ -21,35 +21,37 @@ export const PaymentController = {
 
 
  
-  processPayment: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+   processPayment :async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { orderId, paymentType, amount } = req.body;
       const userId = (req.user as { id: string }).id;
-
+  
       // Find the order
       const order = await OrderModel.findById(orderId);
       if (!order) {
-        res.status(404).json({ message: "Order not found." });
-        return;
+         res.status(404).json({ message: "Order not found." });
+         return
       }
-
+  
       if (order.paymentStatus === "Paid") {
-        res.status(400).json({ message: "Order is already fully paid." });
-        return;
+         res.status(400).json({ message: "Order is already fully paid." });
+         return
       }
-
+  
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        res.status(400).json({ message: "Invalid payment amount." });
-        return;
+         res.status(400).json({ message: "Invalid payment amount." });
+         return
       }
-
+  
       if (parsedAmount > order.dueAmount) {
-        res.status(400).json({ message: "Payment exceeds due amount." });
-        return;
+         res.status(400).json({ message: "Payment exceeds due amount." });
+         return
       }
-
-      // Create Stripe Checkout Session for Partial or Full Payment
+  
+      // ✅ **Fix: Do not update `paymentStatus` here**
+      // `paymentStatus` should stay `"Pending"` until Stripe confirms payment.
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
@@ -57,10 +59,8 @@ export const PaymentController = {
           {
             price_data: {
               currency: "usd",
-              product_data: {
-                name: `Order #${orderId}`,
-              },
-              unit_amount: parsedAmount * 100, // Convert to cents
+              product_data: { name: `Order #${orderId}` },
+              unit_amount: parsedAmount * 100,
             },
             quantity: 1,
           },
@@ -70,106 +70,119 @@ export const PaymentController = {
           orderId: orderId.toString(),
           amountPaid: parsedAmount.toString(),
         },
-        // success_url: `${process.env.FRONTEND_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
         success_url: `${process.env.FRONTEND_URL}/api/payments/success`,
         cancel_url: `${process.env.FRONTEND_URL}/api/payments/cancel`,
       });
-
-      // Save only the session ID for now, payment status is "pending"
+  
+      // ✅ **Fix: Ensure initial status is "Pending"**
       await PaymentModel.create({
         userId,
         orderId,
         amount: order.totalAmount,
-        paidAmount: 0,
-        dueAmount: order.dueAmount,
+        paidAmount: 0, // Stripe will update this later
+        dueAmount: order.dueAmount, // Due amount remains unchanged until Stripe confirms
         paymentType,
-        status: "pending", // Set as "pending" until payment is confirmed
-        paymentIntentId: session.id, // Store Stripe session ID
+        status: "pending", // ✅ Keep pending until Stripe confirms
+        paymentIntentId: session.id,
       });
-
-      // Return payment link to the frontend
+  
       res.status(200).json({
         message: "Payment link generated successfully.",
-        paymentLink: session.url, // Send the Stripe checkout link
+        paymentLink: session.url,
       });
     } catch (error) {
       console.error("Error processing payment:", error);
       next(error);
     }
   },
-
-   successPage:async( req:Request, res:Response,next: NextFunction): Promise<void> => {
+  
+  
+     successPage:async( req:Request, res:Response,next: NextFunction): Promise<void> => {
     // console.log('hit hoise');
-    res.render('success.ejs');
+    res.render('./success.ejs');
   },
   
    cancelPage:async(  req:Request, res:Response,next: NextFunction): Promise<void> => {
-    res.render('cancel.ejs');
+    res.render('./cancel.ejs');
   },
 
 
-  handleWebhook: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const sig = req.headers["stripe-signature"];
-
-    // Log the headers and raw body for debugging
-    console.log("🔹 Stripe-Signature:", sig);
-    console.log("🔹 Raw Body:", req.body); // Log raw body content
-
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!sig || !endpointSecret) {
-      console.error("❌ Missing Stripe signature or webhook secret.");
-       res.status(400).json({ message: "Webhook verification failed." });
-       return
-      }
-
+  handleWebhook : async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-      console.log("✅ Webhook received:", event.type);
-    } catch (err) {
-      console.error("❌ Webhook verification failed:", err);
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const sig = req.headers["stripe-signature"];
+  
+    if (!sig || !endpointSecret) {
+      console.error("❌ Webhook verification failed: Missing signature or secret.");
        res.status(400).json({ message: "Webhook verification failed." });
        return
-      }
-
+    }
+  
+    try {
+      // ✅ Fix: Ensure the raw body is used correctly for signature verification
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      console.log(`✅ Webhook Event Received: ${event.type}`);
+    } catch (err) {
+      console.error("❌ Webhook signature verification failed:", err);
+       res.status(400).json({ message: "Webhook verification failed." });
+       return
+    }
+  
+    // ✅ Handle successful payment confirmation
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const { orderId, amountPaid } = session.metadata ?? {};
-
+  
       if (!orderId || !amountPaid) {
-        console.error("❌ Missing orderId or amountPaid in metadata.");
+        console.error("❌ Invalid metadata in payment session.");
          res.status(400).json({ message: "Invalid metadata in payment session." });
          return
-        }
-
+      }
+  
       const order = await OrderModel.findById(orderId);
       if (!order) {
         console.error("❌ Order not found.");
          res.status(404).json({ message: "Order not found." });
          return
-        }
-
+      }
+  
       const paidAmount = parseFloat(amountPaid);
       order.paidAmount += paidAmount;
       order.dueAmount -= paidAmount;
-      order.paymentStatus = order.dueAmount === 0 ? "Paid" : "Partial";
+  
+      // ✅ Ensure `dueAmount` is set to 0 when full payment is received
+      if (order.dueAmount <= 0) {
+        order.paymentStatus = "Paid";
+        order.dueAmount = 0;
+      } else {
+        order.paymentStatus = "Partial";
+      }
+  
       await order.save();
-
+  
       await PaymentModel.findOneAndUpdate(
         { paymentIntentId: session.id },
-        { status: "succeeded", paidAmount: order.paidAmount, dueAmount: order.dueAmount },
+        {
+          status: "succeeded",
+          paidAmount: order.paidAmount,
+          dueAmount: order.dueAmount,
+        },
         { new: true }
       );
-
+  
       console.log("✅ Order updated successfully:", order);
-       res.json({ received: true, message: "Payment successful, order updated." });
+       res.status(200).json({ received: true, message: "Payment successful, order updated." });
        return
-      } else {
-      console.log(`ℹ️ Unhandled event type: ${event.type}`);
-      res.json({ received: true });
     }
+  
+    console.log(`ℹ️ Unhandled event type: ${event.type}`);
+     res.status(200).json({ received: true });
+     return
   },
-
+  
+  
+  
+  
   getPartialPayments: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Find all partial payments
@@ -278,7 +291,5 @@ viewPayments: async (req: Request, res: Response, next: NextFunction): Promise<v
     }
   },
 };
-function async(arg0: (req: any, res: any) => void) {
-  throw new Error("Function not implemented.");
-}
+
 

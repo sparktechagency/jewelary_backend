@@ -43,18 +43,21 @@
 // export const AdminModel = mongoose.model<IAdmin>('Admin', AdminSchema);
 
 
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
 
 
 export interface IAdmin extends Document {
+   _id: Types.ObjectId;  // Ensure `_id` is properly typed
   username: string;
   email: string;
   phone: string;
   password: string;
   isActive: boolean;
+  // role: { type: String, default: "admin" },  // ✅ Ensure role exists
   passwordResetToken?: string;  // Optional field for OTP
   resetTokenExpiry?: Date;      // Optional field for OTP expiry
+
 }
 
 const AdminSchema = new Schema<IAdmin>({
@@ -82,6 +85,9 @@ const AdminSchema = new Schema<IAdmin>({
     type: Boolean,
     default: true
   },
+ 
+    // role: { type: String, default: "admin" },  // ✅ Ensure role exists
+
   passwordResetToken: { type: String },
   resetTokenExpiry: { type: Date },
 }, { timestamps: true });

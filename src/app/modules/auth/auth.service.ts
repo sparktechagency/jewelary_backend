@@ -3,6 +3,11 @@
 // import { AdminModel } from "../../models/admin.model";
 // import { JWTPayload } from "./auth.types";
 
+import { AdminModel, IAdmin } from "../../models/admin.model";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { JWTPayload } from "./auth.types";
+import { Types } from "mongoose";
 // export const AuthService = {
 //   authenticate: async (email: string, password: string) => {
 //     // Look for the admin in the database
@@ -28,68 +33,47 @@
 //   },
 // };
 
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { AdminModel } from "../../models/admin.model";  // Admin Model
-import { JWTPayload } from "./auth.types";  // JWT Payload Type
-import { IAdmin } from "../../../types/admin.types";  // Import the IAdmin interface
-import mongoose from "mongoose";  // For ObjectId handling
+// import Types  from "mongoose";  // Import Types from mongoose
 
 export const AuthService = {
-  // 🟢 Authenticate the admin and return a JWT token
   authenticate: async (email: string, password: string) => {
-    // Find admin by email and cast to IAdmin type
-    const admin = await AdminModel.findOne({ email }) as IAdmin;  // Typecast to IAdmin
+    // Find admin by email
+    const admin = await AdminModel.findOne({ email }) as IAdmin;
 
-    // If admin does not exist or password is incorrect
     if (!admin) {
-      console.log("Admin not found");
+      console.log("❌ Admin not found");
       throw new Error("Invalid credentials");
     }
 
-    // Debugging logs for password comparison
-    console.log("Entered password:", password);
-    console.log("Stored hashed password:", admin.password);
+    console.log("🔹 Entered password:", password);
+    console.log("🔹 Stored hashed password:", admin.password);
 
-    // Compare entered password with stored password using bcrypt
-    const isPasswordValid = await bcrypt.compare(password.trim(), admin.password);  // Use trim() to ensure no extra spaces
+    // 🔴 FIX: Ensure password comparison works correctly
+    if (!admin.password || typeof admin.password !== "string") {
+      console.log("❌ Password field is missing or incorrect format");
+      throw new Error("Invalid credentials");
+    }
+
+    // 🔴 FIX: Ensure bcrypt is comparing properly
+    const isPasswordValid = await bcrypt.compare(password.trim(), admin.password);
 
     if (!isPasswordValid) {
-      console.log("Invalid credentials - Password mismatch");
+      console.log("❌ Invalid credentials - Password mismatch");
       throw new Error("Invalid credentials");
     }
-
-    // If credentials are valid, generate the JWT token
+    const adminId = admin._id instanceof Types.ObjectId ? admin._id.toString() : String(admin._id);    // Generate JWT Token
     const payload: JWTPayload = {
       email,
       role: "admin",
-      userId: admin._id.toString(),  // admin._id is now treated as IAdmin's ObjectId
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", {
-      expiresIn: "1d",  // Token expiry time (adjust as needed)
-    });
-
-    return { token, role: payload.role, email: payload.email, id: admin._id.toString() };  // return _id as string
-  },
-
-  // 🟢 Find user by email (helper function to check credentials)
-  findUserByEmail: async (email: string) => {
-    const admin = await AdminModel.findOne({ email }) as IAdmin;  // Typecast to IAdmin type
-    return admin;
-  },
-
-  // 🟢 Generate JWT Token for authenticated user
-  generateAuthToken: async (admin: IAdmin) => {
-    const payload: JWTPayload = {
-      email: admin.email,
-      role: "admin",
-      userId: admin._id.toString(),
+      userId: adminId,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", {
       expiresIn: "1d",
     });
-    return token;
+
+    return { token, role: payload.role, email: payload.email, id: adminId.toString() };
   },
 };
+
+

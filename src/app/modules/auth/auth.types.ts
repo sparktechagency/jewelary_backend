@@ -20,6 +20,8 @@ export interface AdminCredentials {
   password: string;
 }
 
+
+
 export interface JWTPayload {
   userId: string;
   email: string;
