@@ -135,7 +135,7 @@ interface IOrder extends Document {
     variation: {
       color: mongoose.Types.ObjectId;     // Reference to Color
       size: mongoose.Types.ObjectId;      // Reference to Size
-      thickness: mongoose.Types.ObjectId; // Reference to Thickness
+      // thickness: mongoose.Types.ObjectId; // Reference to Thickness
     };
   }[];
   contactName: string;
@@ -161,7 +161,7 @@ const OrderSchema: Schema = new Schema(
         variation: {
           color: { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true },
           size: { type: mongoose.Schema.Types.ObjectId, ref: "Size", required: true },
-          thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
+          // thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
         },
       },
     ],

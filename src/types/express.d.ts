@@ -27,3 +27,13 @@ declare module "express-serve-static-core" {
     };
   }
 }
+
+interface Variation {
+  color: string;
+  size: string;
+  thickness: string;
+  quantity: number;
+  price: number;
+  colorName: string;
+  colorValue: string;
+}

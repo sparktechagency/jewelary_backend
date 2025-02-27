@@ -24,6 +24,7 @@ export interface IAdmin extends Document {
   phone: string;
   password: string;
   isActive: boolean;
+  role: string;
   passwordResetToken?: string;
   resetTokenExpiry?: Date;
 }

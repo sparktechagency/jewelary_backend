@@ -23,10 +23,12 @@ router.get("/partialOrder", isAuthenticated, isAdmin, OrderController.getPartial
 router.get("/customOrder", isAuthenticated, isAdmin, OrderController.getCustomOrder);
 
 // Route for fetching all "total order" status orders
-router.get("/totalOrder", isAuthenticated, isAdmin, OrderController.getTotalOrder);
+// router.get("/totalOrder", isAuthenticated, isAdmin, OrderController.getTotalOrder);
 
 // Route for fetching all "cancelled order" status orders
 router.get("/cancelledOrder", isAuthenticated, isAdmin, OrderController.getCancelledOrder);
+
+router.get("/orderStatusCounts", isAuthenticated, isAdmin, OrderController.getOrderStatusCounts);
 
 // Admin routes
 router.get("/", isAuthenticated, isAdmin, OrderController.getAllOrders);

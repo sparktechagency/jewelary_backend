@@ -8,9 +8,7 @@
 //   dueAmount: number;
 //   paymentType: "full" | "partial" | "cod";
 //   paymentIntentId?: string;
-//   // status: "pending" | "partial" | "succeeded" | "failed";
-//   status: { type: String, enum: ["pending", "partial", "Paid", "failed"], default: "pending" },
-
+//   status: "pending" | "partial" | "Paid" | "failed"; // ✅ Fixed status values
 //   createdAt: Date;
 // }
 
@@ -20,14 +18,15 @@
 //   amount: { type: Number, required: true },
 //   paidAmount: { type: Number, required: true },
 //   dueAmount: { type: Number, required: true },
-//   paymentType: { type: String, enum: ["full", "partial", "cod",], required: true },
+//   paymentType: { type: String, enum: ["full", "partial", "cod"], required: true },
 //   paymentIntentId: { type: String },
-//   status: { type: String, enum: ["pending", "Paid", "failed"], default: "pending" },
+//   status: { type: String, enum: ["pending", "partial", "Paid", "failed"], default: "pending" }, // ✅ Fixed Enum
 //   createdAt: { type: Date, default: Date.now },
 // });
 
 // const PaymentModel = mongoose.model<IPayment>("Payment", PaymentSchema);
 // export default PaymentModel;
+
 
 import mongoose, { Document, Schema } from "mongoose";
 
@@ -39,7 +38,7 @@ interface IPayment extends Document {
   dueAmount: number;
   paymentType: "full" | "partial" | "cod";
   paymentIntentId?: string;
-  status: "pending" | "partial" | "Paid" | "failed"; // ✅ Fixed status values
+  status: "pending" | "partial" | "Paid" | "succeeded" | "failed"; // Add "succeeded" to the status
   createdAt: Date;
 }
 
@@ -51,7 +50,7 @@ const PaymentSchema = new Schema<IPayment>({
   dueAmount: { type: Number, required: true },
   paymentType: { type: String, enum: ["full", "partial", "cod"], required: true },
   paymentIntentId: { type: String },
-  status: { type: String, enum: ["pending", "partial", "Paid", "failed"], default: "pending" }, // ✅ Fixed Enum
+  status: { type: String, enum: ["pending", "partial", "Paid", "succeeded", "failed"], default: "pending" }, // Added "succeeded"
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -1,17 +1,10 @@
 import express from 'express';
 import { AdminController } from '../admin/admin.controller';
-import { isAdmin, isAuthenticated } from '../auth/auth.middleware';
+import { isAdmin, isAuthenticated, verifyToken } from '../auth/auth.middleware';
+import { AuthController } from '../auth/auth.controller';
 
 const router = express.Router();
-
-// router.post('/', isAuthenticated,isAdmin,AdminController.createAdmin);
-router.post("/forget",AdminController.forgotPassword)
-router.post("/verify-otp", AdminController.verifyOtp);
-router.post("/reset-password", AdminController.resetPassword);
-router.post("/changepass", AdminController.changePassword);
-router.post("/change-password", AdminController.changeAdminPassword);
-router.put('/:id', isAuthenticated,isAdmin,AdminController.updateAdmin);
-router.get('/all', isAuthenticated,isAdmin,AdminController.getAdmins);
-router.delete('/:id', isAuthenticated,isAdmin,AdminController.deleteAdmin);
+router.put('/profile', verifyToken, isAdmin, AuthController.updateAdminProfile);
+router.post('/change-password', verifyToken, isAdmin, AuthController.changePassword);
 
 export { router as adminRoutes};

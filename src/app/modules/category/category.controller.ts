@@ -3,7 +3,7 @@ import { CategoryService } from "./category.service";
 import CategoryModel from "../../models/Category";
 import ColorModel from "../../models/attribute/attribute.color";
 import SizeModel from "../../models/attribute/attribute.size";
-import ThicknessModel from "../../models/attribute/attribute.thikness";
+// import ThicknessModel from "../../models/attribute/attribute.thikness";
 
 import { uploadCategory, uploadDebug } from "../multer/multer.conf";
 import multer from "multer";
@@ -191,7 +191,7 @@ export const CategoryController = {
       getCategoryInventory: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
           const { categoryId } = req.params; // Get the category ID from the URL params
-          const { search = "", color, size, thickness } = req.query; // Search query, and optional filters for color, size, and thickness
+          const { search = "", color, size } = req.query; // Search query, and optional filters for color, size, and thickness
     
           // Validate categoryId (ensure it's a valid ObjectId)
           if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -225,16 +225,16 @@ export const CategoryController = {
           }
     
           // Apply thickness filter if provided and valid ObjectId
-          if (thickness && mongoose.Types.ObjectId.isValid(thickness as string)) {
-            query["variations.thickness"] = new mongoose.Types.ObjectId(thickness as string);
-          }
+          // if (thickness && mongoose.Types.ObjectId.isValid(thickness as string)) {
+          //   query["variations.thickness"] = new mongoose.Types.ObjectId(thickness as string);
+          // }
     
           // Perform the query on products to fetch the products for the category
           const products = await ProductModel.find(query)
             .populate("category")  // Populate category
             .populate("variations.color")  // Populate color data
             .populate("variations.size")   // Populate size data
-            .populate("variations.thickness")  // Populate thickness data
+            // .populate("variations.thickness")  // Populate thickness data
             .exec();
     
           // If no products are found, return an empty array for products
@@ -261,7 +261,7 @@ export const CategoryController = {
               variations: product.variations.map((v: any) => ({
                 color: v.color,
                 size: v.size,
-                thickness: v.thickness,
+                // thickness: v.thickness,
                 quantity: v.quantity,
                 price: v.price,
               }))
@@ -295,7 +295,7 @@ export const CategoryController = {
             .populate("category")  // Populate category details
             .populate("variations.color")  // Populate color details
             .populate("variations.size")   // Populate size details
-            .populate("variations.thickness")  // Populate thickness details
+            // .populate("variations.thickness")  // Populate thickness details
             .exec();
 
           // Compute total products in this category
@@ -312,7 +312,7 @@ export const CategoryController = {
               variations: product.variations.map((v: any) => ({
                 color: v.color,
                 size: v.size,
-                thickness: v.thickness,
+                // thickness: v.thickness,
                 quantity: v.quantity,
                 price: v.price,
               }))

@@ -26,34 +26,34 @@ export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
-export const verifyToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = req.headers.authorization?.split(" ")[1];  // Extract token from "Bearer <token>"
+
     if (!token) {
       res.status(401).json({ message: "No token provided." });
       return;
     }
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
-    req.user = { id: (decoded.userId).toString(), role: decoded.role }; // Adjust as needed
-    next();
+
+    // Verify token and extract the payload
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as { userId: string; role: string };
+
+    // Ensure that the userId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
+       res.status(400).json({ message: "Invalid user ID in token." });
+       return
+    }
+
+    // Attach the decoded user information (userId and role) to req.user
+    req.user = { id: decoded.userId, role: decoded.role };
+
+    next();  // Proceed to the next middleware or route handler
   } catch (error) {
-    console.error("JWT verification error:", error);
+    console.error("Token verification error:", error);
     res.status(401).json({ message: "Invalid or expired token." });
   }
-  
 };
 
-// export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
-//   if (!req.user || req.user.role !== 'admin') {
-//     res.status(403).json({ message: "Access denied. Admins only." });
-//     return;
-//   }
-//   next();
-// };
 
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user || req.user.role !== 'admin') {
@@ -62,6 +62,8 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
   }
   next();
 };
+
+
 
 
 

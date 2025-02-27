@@ -2,7 +2,7 @@ import mongoose, { Types } from "mongoose";
 import ProductModel from "../../models/Product";  // Use default import
 import ColorModel from "../../models/attribute/attribute.color";
 import SizeModel from "../../models/attribute/attribute.size";
-import ThicknessModel from "../../models/attribute/attribute.thikness";
+// import ThicknessModel from "../../models/attribute/attribute.thikness";
 
 
 export const ProductService = {
@@ -448,7 +448,7 @@ create: async (productData: any) => {
     variations.forEach((v: any) => {
       v.color = validateAndConvert(v.color, "color");
       v.size = validateAndConvert(v.size, "size");
-      v.thickness = validateAndConvert(v.thickness, "thickness");
+      // v.thickness = validateAndConvert(v.thickness, "thickness");
 
       // Validate variation price and quantity
       const priceVal = parseFloat(v.price);
@@ -475,16 +475,16 @@ create: async (productData: any) => {
 
     const uniqueColorIds = uniqueIds(variations.map((v: any) => v.color));
     const uniqueSizeIds = uniqueIds(variations.map((v: any) => v.size));
-    const uniqueThicknessIds = uniqueIds(variations.map((v: any) => v.thickness));
+    // const uniqueThicknessIds = uniqueIds(variations.map((v: any) => v.thickness));
     
     // Debug logging
     console.log("Unique Color IDs:", uniqueColorIds);
 
     // Fetch and validate attribute data from their models (only active ones)
-    const [colorData, sizeData, thicknessData] = await Promise.all([
+    const [colorData, sizeData] = await Promise.all([
       ColorModel.find({ _id: { $in: uniqueColorIds }, active: true }),
       SizeModel.find({ _id: { $in: uniqueSizeIds }, active: true }),
-      ThicknessModel.find({ _id: { $in: uniqueThicknessIds }, active: true }),
+      // ThicknessModel.find({ _id: { $in: uniqueThicknessIds }, active: true }),
     ]);
 
     console.log("Active Colors Found:", colorData);
@@ -495,9 +495,9 @@ create: async (productData: any) => {
     if (sizeData.length !== uniqueSizeIds.length) {
       throw new Error("Some selected sizes are inactive. Please choose accessible sizes.");
     }
-    if (thicknessData.length !== uniqueThicknessIds.length) {
-      throw new Error("Some selected thicknesses are inactive. Please choose accessible thicknesses.");
-    }
+    // if (thicknessData.length !== uniqueThicknessIds.length) {
+    //   throw new Error("Some selected thicknesses are inactive. Please choose accessible thicknesses.");
+    // }
 
     // Create and save the product document
     const newProduct = new ProductModel({

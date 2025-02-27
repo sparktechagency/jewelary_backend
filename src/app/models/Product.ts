@@ -61,7 +61,7 @@ export interface IProduct extends Document {
   variations: {
     color: mongoose.Types.ObjectId;
     size: mongoose.Types.ObjectId;
-    thickness: mongoose.Types.ObjectId;
+    // thickness: mongoose.Types.ObjectId;
     quantity: number;
     price: number;
   }[];
@@ -73,7 +73,7 @@ const ProductSchema: Schema = new Schema(
     name: { type: String, required: true },
     details: { type: String, required: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },  // Should reference CategoryModel
-    availableQuantity: { type: Number, required: true },
+    availableQuantity: { type: Number, required: false },
     minimumOrderQuantity: { type: Number, required: true },
     deliveryCharge: { type: Number, required: true },
     file: [{ type: String }],
@@ -82,7 +82,7 @@ const ProductSchema: Schema = new Schema(
       {
         color: { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true },
         size: { type: mongoose.Schema.Types.ObjectId, ref: "Size", required: true },
-        thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
+        // thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
       },

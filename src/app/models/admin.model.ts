@@ -54,7 +54,7 @@ export interface IAdmin extends Document {
   phone: string;
   password: string;
   isActive: boolean;
-  // role: { type: String, default: "admin" },  // ✅ Ensure role exists
+  role: { type: String, default: "admin" },  // ✅ Ensure role exists
   passwordResetToken?: string;  // Optional field for OTP
   resetTokenExpiry?: Date;      // Optional field for OTP expiry
 
