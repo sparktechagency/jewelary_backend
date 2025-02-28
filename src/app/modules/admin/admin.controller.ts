@@ -1,106 +1,301 @@
-// Import any missing dependencies
 import { Request, Response, NextFunction } from 'express';
+import { AdminModel, IAdmin } from '../../models/admin.model';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import {AdminModel} from '../../models/admin.model';
-import { IAdmin } from '../../../types/admin.types';
 
 export const AdminController = {
-  // ... your existing controller methods
-
-  updateAdmin: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { email, username, currentPassword, newPassword, confirmPassword } = req.body;
-    const adminId = req.user?.id; // Get admin ID from authenticated user
-    
+  // Create a new admin
+  createAdmin: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Validate inputs
+      const { username, email, password, confirmPassword, phone } = req.body;
+
+      // Basic validation
+      if (!username || !email || !password || !confirmPassword) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'All fields are required (username, email, password, confirmPassword)' 
+        });
+        return;
+      }
+
+      // Validate password confirmation
+      if (password !== confirmPassword) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Passwords do not match' 
+        });
+        return;
+      }
+
+      // Check if email already exists
+      const existingEmail = await AdminModel.findOne({ email });
+      if (existingEmail) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Email already in use' 
+        });
+        return;
+      }
+
+      // Check if username already exists
+      const existingUsername = await AdminModel.findOne({ username });
+      if (existingUsername) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Username already in use' 
+        });
+        return;
+      }
+
+      // Create new admin (password hashing is handled by pre-save hook in the model)
+      const newAdmin = new AdminModel({
+        username,
+        email,
+        password,
+        phone: phone || undefined,  // Only add if provided
+        isActive: true,
+        role: 'admin'
+      });
+
+      await newAdmin.save();
+
+      // Generate JWT token for immediate login
+      const payload = {
+        userId: newAdmin._id.toString(),
+        email: newAdmin.email,
+        role: 'admin'
+      };
+
+      const token = jwt.sign(
+        payload,
+        process.env.JWT_SECRET || 'default_secret',
+        { expiresIn: '1d' }
+      );
+
+      // Return success with admin details (excluding password)
+      res.status(201).json({
+        success: true,
+        message: 'Admin created successfully',
+        data: {
+          id: newAdmin._id,
+          username: newAdmin.username,
+          email: newAdmin.email,
+          role: newAdmin.role,
+          token
+        }
+      });
+    } catch (error) {
+      console.error('Admin creation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage 
+      });
+    }
+  },
+
+  // Admin login
+  login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+
+      // Validate input
+      if (!email || !password) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Email and password are required' 
+        });
+        return;
+      }
+
+      // Find admin by email
+      const admin = await AdminModel.findOne({ email });
+      if (!admin) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+        return;
+      }
+
+      // Check if admin is active
+      if (!admin.isActive) {
+        res.status(403).json({ 
+          success: false, 
+          message: 'Account is disabled. Please contact support.' 
+        });
+        return;
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password.trim(), admin.password);
+      if (!isPasswordValid) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+        return;
+      }
+
+      // Generate JWT token
+      const payload = {
+        userId: admin._id.toString(),
+        email: admin.email,
+        role: 'admin'
+      };
+
+      const token = jwt.sign(
+        payload,
+        process.env.JWT_SECRET || 'default_secret',
+        { expiresIn: '1d' }
+      );
+
+      // Return success with token and admin details
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          id: admin._id,
+          username: admin.username,
+          email: admin.email,
+          role: admin.role,
+          token
+        }
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage 
+      });
+    }
+  },
+
+  // Change password
+  changePassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { currentPassword, newPassword, confirmPassword } = req.body;
+      const adminId = req.user?.id; // Get admin ID from authenticated user
+
+      // Validate input
       if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
-        res.status(400).json({ error: "Invalid admin ID" });
+        res.status(400).json({ 
+          success: false, 
+          message: 'Invalid admin ID' 
+        });
+        return;
+      }
+
+      // Check if all required fields are provided
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'All password fields are required' 
+        });
+        return;
+      }
+
+      // Verify passwords match
+      if (newPassword !== confirmPassword) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'New passwords do not match' 
+        });
         return;
       }
 
       // Find the admin by ID
-      const admin = await AdminModel.findById(adminId) as IAdmin;
+      const admin = await AdminModel.findById(adminId);
       if (!admin) {
-        res.status(404).json({ error: "Admin not found" });
+        res.status(404).json({ 
+          success: false, 
+          message: 'Admin not found' 
+        });
         return;
       }
 
-      // Initialize update object with fields that don't require password verification
-      const updates: Partial<IAdmin> = {};
-      
-      // Check if email or username is being updated
-      if (email && email !== admin.email) {
-        // Check if email already exists for another admin
-        const emailExists = await AdminModel.findOne({ email, _id: { $ne: adminId } });
-        if (emailExists) {
-          res.status(400).json({ error: "Email already in use" });
-          return;
-        }
-        updates.email = email;
-      }
-      
-      if (username && username !== admin.username) {
-        updates.username = username;
-      }
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(
+        currentPassword.trim(), 
+        admin.password
+      );
 
-      // If password change is requested
-      if (currentPassword && newPassword && confirmPassword) {
-        // Verify passwords match
-        if (newPassword !== confirmPassword) {
-          res.status(400).json({ error: "New passwords do not match" });
-          return;
-        }
-
-        // Verify current password
-        const isCurrentPasswordValid = await bcrypt.compare(
-          currentPassword.trim(), 
-          admin.password
-        );
-
-        if (!isCurrentPasswordValid) {
-          res.status(401).json({ error: "Current password is incorrect" });
-          return;
-        }
-
-        // Password complexity validation (optional)
-        if (newPassword.length < 8) {
-          res.status(400).json({ error: "New password must be at least 8 characters long" });
-          return;
-        }
-
-        // Hash new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
-        updates.password = hashedPassword;
-      }
-
-      // Update admin if there are changes
-      if (Object.keys(updates).length === 0) {
-        res.status(400).json({ error: "No changes to update" });
+      if (!isCurrentPasswordValid) {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Current password is incorrect' 
+        });
         return;
       }
 
-      // Apply updates and return updated admin
-      const updatedAdmin = await AdminModel.findByIdAndUpdate(
+      // Password complexity validation
+      if (newPassword.length < 8) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'New password must be at least 8 characters long' 
+        });
+        return;
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
+
+      // Update admin's password
+      await AdminModel.findByIdAndUpdate(
         adminId,
-        { $set: updates },
-        { new: true, select: '-password' } // Return updated document without password
+        { $set: { password: hashedPassword } }
       );
 
       res.status(200).json({
-        message: "Admin updated successfully",
-        admin: {
-          id: updatedAdmin?._id,
-          email: updatedAdmin?.email,
-          username: updatedAdmin?.username,
-          role: updatedAdmin?.role || 'admin'
-        }
+        success: true,
+        message: 'Password changed successfully'
       });
     } catch (error) {
-      console.error("Admin update error:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-      res.status(500).json({ error: errorMessage });
+      console.error('Password change error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage 
+      });
+    }
+  },
+
+  // Get admin profile
+  getProfile: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const adminId = req.user?.id;
+
+      if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Invalid admin ID' 
+        });
+        return;
+      }
+
+      const admin = await AdminModel.findById(adminId).select('-password');
+      if (!admin) {
+        res.status(404).json({ 
+          success: false, 
+          message: 'Admin not found' 
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: admin
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage 
+      });
     }
   }
 };

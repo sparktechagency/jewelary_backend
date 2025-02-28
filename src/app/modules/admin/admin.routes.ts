@@ -1,10 +1,15 @@
 import express from 'express';
-import { AdminController } from '../admin/admin.controller';
+import { AdminController } from './admin.controller';
 import { isAdmin, isAuthenticated, verifyToken } from '../auth/auth.middleware';
-import { AuthController } from '../auth/auth.controller';
 
 const router = express.Router();
-router.put('/profile', verifyToken, isAdmin, AuthController.updateAdminProfile);
-router.post('/change-password', verifyToken, isAdmin, AuthController.changePassword);
 
-export { router as adminRoutes};
+// Public routes (no authentication required)
+router.post('/login', AdminController.login);
+
+// Routes that require authentication and admin role
+router.post('/create',   AdminController.createAdmin); // Only admins can create other admins
+router.get('/profile', verifyToken, isAdmin, AdminController.getProfile);
+router.post('/change-password', verifyToken, isAdmin, AdminController.changePassword);
+
+export { router as adminRoutes };

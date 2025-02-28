@@ -10,44 +10,7 @@ import { JWTPayload } from "./auth.types";
 import mongoose, { Types } from "mongoose";
 
 export const AuthService = {
-  // authenticate: async (email: string, password: string) => {
-  //   // Find admin by email
-  //   const admin = await AdminModel.findOne({ email }) as IAdmin;
 
-  //   if (!admin) {
-  //     console.log("❌ Admin not found");
-  //     throw new Error("Invalid credentials");
-  //   }
-
-  //   console.log("🔹 Entered password:", password);
-  //   console.log("🔹 Stored hashed password:", admin.password);
-
-  //   // 🔴 FIX: Ensure password comparison works correctly
-  //   if (!admin.password || typeof admin.password !== "string") {
-  //     console.log("❌ Password field is missing or incorrect format");
-  //     throw new Error("Invalid credentials");
-  //   }
-
-  //   // 🔴 FIX: Ensure bcrypt is comparing properly
-  //   const isPasswordValid = await bcrypt.compare(password.trim(), admin.password);
-
-  //   if (!isPasswordValid) {
-  //     console.log("❌ Invalid credentials - Password mismatch");
-  //     throw new Error("Invalid credentials");
-  //   }
-  //   const adminId = admin._id instanceof Types.ObjectId ? admin._id.toString() : String(admin._id);    // Generate JWT Token
-  //   const payload: JWTPayload = {
-  //     email,
-  //     role: "admin",
-  //     userId: adminId,
-  //   };
-
-  //   const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", {
-  //     expiresIn: "1d",
-  //   });
-
-  //   return { token, role: payload.role, email: payload.email, id: adminId.toString() };
-  // },
  
   authenticate: async (email: string, password: string) => {
     // Find admin by email and cast to IAdmin type
@@ -135,5 +98,4 @@ export const AuthService = {
     return true;
   },
 };
-
 

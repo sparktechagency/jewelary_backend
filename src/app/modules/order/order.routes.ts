@@ -29,6 +29,7 @@ router.get("/customOrder", isAuthenticated, isAdmin, OrderController.getCustomOr
 router.get("/cancelledOrder", isAuthenticated, isAdmin, OrderController.getCancelledOrder);
 
 router.get("/orderStatusCounts", isAuthenticated, isAdmin, OrderController.getOrderStatusCounts);
+router.get("/getPaymentPaid", isAuthenticated, isAdmin, OrderController.getPaymentPaid);
 
 // Admin routes
 router.get("/", isAuthenticated, isAdmin, OrderController.getAllOrders);

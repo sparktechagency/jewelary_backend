@@ -12,6 +12,20 @@ import { uploadOrder } from "../multer/multer.conf";
 import NotificationModel from "../../models/notificationModel";
 import ColorModel from "../../models/attribute/attribute.color";
 
+
+interface ProductItem {
+  productId: mongoose.Types.ObjectId | string;
+  quantity: number;
+  color: mongoose.Types.ObjectId | string;
+  size: mongoose.Types.ObjectId | string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  message?: string;
+  data?: any;
+}
+
 export const OrderController = {
 
 
@@ -156,203 +170,85 @@ export const OrderController = {
   //   try {
   //     const { userName, products, paymentType } = req.body;
   //     let paidAmt: number = Number(req.body.paidAmount) || 0;
-
+  
   //     // Validate inputs
   //     if (!userName || !Array.isArray(products) || products.length === 0) {
   //       res.status(400).json({ message: "User name and product list are required." });
   //       return;
   //     }
-
+  
   //     // Find user by name
   //     const user = await UserModel.findOne({ username: userName });
   //     if (!user) {
   //       res.status(404).json({ message: "User not found." });
   //       return;
   //     }
-
-  //     const userId = user._id as mongoose.Types.ObjectId;
-
+  
+  //     const userId = user._id;
+  
   //     let totalAmount = 0;
+  //     let validatedItems = [];
+      
   //     // Validate each product and calculate total amount using product price from variations
   //     for (const item of products) {
-  //       const product = await ProductModel.findById(item.productId).populate("variations.color").populate("variations.size").populate("variations.thickness");
-
+  //       const product = await ProductModel.findById(item.productId)
+  //         .populate("variations.color")
+  //         .populate("variations.size");
+  
   //       if (!product) {
   //         res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
   //         return;
   //       }
-
-  //       // Find the variation based on color, size, and thickness
-  //       const variation = product.variations.find((v) =>
-  //         v.color.toString() === item.color &&
-  //         v.size.toString() === item.size &&
-  //         v.thickness.toString() === item.thickness
+  
+  //       // Filter out inactive variations (color and size should be active)
+  //       const activeVariations = product.variations.filter((v: any) =>
+  //         v.color.active && v.size.active
   //       );
-
-  //       if (!variation) {
+  
+  //       // If no active variations are found
+  //       if (activeVariations.length === 0) {
   //         res.status(400).json({
-  //           message: `No matching variation found for product ${product.name}. Available variations are: ${JSON.stringify(product.variations)}`,
+  //           message: `No active variations found for product ${product.name}.`
   //         });
   //         return;
   //       }
-
-  //       // Calculate the total amount using the variation price
-  //       totalAmount += variation.price * item.quantity;
-  //     }
-
-  //     let dueAmount = totalAmount - paidAmt;
-  //     let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
-
-  //     if (paymentType === "full") {
-  //       dueAmount = 0;
-  //       paymentStatus = "Paid";
-  //     } else if (paymentType === "partial") {
-  //       paymentStatus = dueAmount > 0 ? "Partial" : "Paid";
-  //     } else if (paymentType === "cod") {
-  //       dueAmount = totalAmount;
-  //       paidAmt = 0;
-  //       paymentStatus = "Pending";
-  //     }
-
-  //     // Fallback values for contact details if not provided
-  //     const contactName = req.body.contactName || "Default Contact Name";
-  //     const contactNumber = req.body.contactNumber || "0000000000";
-  //     const deliverTo = req.body.deliverTo || "Default Address";
-  //     const receiptUrls: string[] = [];
-
-  //     // Create the order with items containing just productId, variation details, and quantity
-  //     const newOrder = new OrderModel({
-  //       userId,
-  //       items: products.map((item: any) => ({
-  //         productId: item.productId,
-  //         quantity: item.quantity,
-  //         color: item.color,
-  //         size: item.size,
-  //         thickness: item.thickness,
-  //       })),
-  //       contactName,
-  //       contactNumber,
-  //       deliverTo,
-  //       totalAmount,
-  //       paidAmount: paidAmt,
-  //       dueAmount,
-  //       paymentType,
-  //       paymentStatus,
-  //       receiptUrls,
-  //       orderStatus: "pending",
-  //     });
-
-  //     await newOrder.save();
-
-  //     // Optionally emit a notification to the user
-  //     io.emit("orderStatusUpdate", {
-  //       message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
-  //       orderId: newOrder._id,
-  //     });
-
-  //     res.status(201).json({
-  //       message: "Custom order created successfully.",
-  //       orderId: newOrder._id,
-  //       totalAmount,
-  //       paidAmount: paidAmt,
-  //       dueAmount,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error creating custom order:", error);
-  //     next(error);
-  //   }
-  // },
-
   
-
-  
-
-  // getAllOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     console.log("🔍 Fetching Orders...");
-  
-  //     // Extract status from query params
-  //     const { status } = req.query;
-  
-  //     // Initialize a filter object
-  //     let filter: any = {};
-  
-  //     // Apply order status filtering if a status is provided
-  //     if (status) {
-  //       filter.orderStatus = status.toString(); // Ensure it's a string
-  //     }
-  
-  //     // Fetch orders using the filter
-  //     const orders = await OrderModel.find(filter).populate("items.productId").lean();
-  //     console.log("🔹 Orders Found:", orders.length);
-  
-  //     const ordersWithPaymentType = orders.map(order => ({
-  //       ...order,
-  //       paymentType: order.paymentStatus === "Paid" ? "full" : order.paymentStatus === "Partial" ? "partial" : "cod",
-  //     }));
-
-  //     if (orders.length === 0) {
-  //       res.status(404).json({ message: "No orders found for the specified status." });
-  //       return;
-  //     }
-  
-  //     res.status(200).json({  orders: ordersWithPaymentType });
-  //   } catch (error) {
-  //     console.error("Error Fetching Orders:", error);
-  //     next(error);
-  //   }
-  // },
-  
-  // createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const { userName, products, paymentType } = req.body;
-  //     let paidAmt: number = Number(req.body.paidAmount) || 0;
-  
-  //     // Validate inputs
-  //     if (!userName || !Array.isArray(products) || products.length === 0) {
-  //       return res.status(400).json({ message: "User name and product list are required." });
-  //     }
-  
-  //     // Find user by name
-  //     const user = await UserModel.findOne({ username: userName });
-  //     if (!user) {
-  //       return res.status(404).json({ message: "User not found." });
-  //     }
-  
-  //     const userId = user._id as mongoose.Types.ObjectId;
-  
-  //     let totalAmount = 0;
-  //     // Validate each product and calculate total amount using product price from variations
-  //     for (const item of products) {
-  //       const product = await ProductModel.findById(item.productId).populate("variations.color").populate("variations.size").populate("variations.thickness");
-  
-  //       if (!product) {
-  //         return res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
-  //       }
-  
-  //       // Filter out inactive variations (color, size, and thickness should be active)
-  //       const activeVariations = product.variations.filter((v: any) =>
-  //         v.color.active && v.size.active && v.thickness.active
-  //       );
-  
-  //       // Find the variation based on color, size, and thickness
+  //       // Find the variation based on color and size
   //       const variation = activeVariations.find((v) =>
-  //         v.color.toString() === item.color &&
-  //         v.size.toString() === item.size &&
-  //         v.thickness.toString() === item.thickness
+  //         v.color._id.toString() === item.color.toString() &&
+  //         v.size._id.toString() === item.size.toString()
   //       );
   
-  //       // If no matching variation is found, return a detailed error with available variations
+  //       // If no matching variation is found, return the error with available variations
   //       if (!variation) {
-  //         return res.status(400).json({
-  //           message: `No matching variation found for product ${product.name}. Available variations are: ${JSON.stringify(activeVariations)}`,
+  //         res.status(400).json({
+  //           message: `No matching variation found for product ${product.name}.`,
+  //           availableVariations: activeVariations.map(async v => ({
+  //             color: v.color._id,
+  //             colorName: (await ColorModel.findById(v.color))?.colorName,
+  //             size: v.size._id,
+  //             sizeName: v.size,
+  //             price: v.price
+  //           }))
   //         });
+  //         return;
   //       }
   
   //       // Calculate the total amount using the variation price
   //       totalAmount += variation.price * item.quantity;
+        
+  //       // Format the item according to the schema
+  //       validatedItems.push({
+  //         productId: item.productId,
+  //         quantity: item.quantity,
+  //         variation: {
+  //           color: item.color,
+  //           size: item.size
+  //         }
+  //       });
   //     }
   
+  //     // Calculate payment details
   //     let dueAmount = totalAmount - paidAmt;
   //     let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
   
@@ -368,21 +264,15 @@ export const OrderController = {
   //     }
   
   //     // Fallback values for contact details if not provided
-  //     const contactName = req.body.contactName || "Default Contact Name";
-  //     const contactNumber = req.body.contactNumber || "0000000000";
+  //     const contactName = req.body.contactName || user.username || userName;
+  //     const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
   //     const deliverTo = req.body.deliverTo || "Default Address";
   //     const receiptUrls: string[] = [];
   
-  //     // Create the order with items containing just productId, variation details, and quantity
+  //     // Create the order with properly structured items
   //     const newOrder = new OrderModel({
   //       userId,
-  //       items: products.map((item: any) => ({
-  //         productId: item.productId,
-  //         quantity: item.quantity,
-  //         color: item.color,
-  //         size: item.size,
-  //         thickness: item.thickness,
-  //       })),
+  //       items: validatedItems,
   //       contactName,
   //       contactNumber,
   //       deliverTo,
@@ -392,15 +282,39 @@ export const OrderController = {
   //       paymentType,
   //       paymentStatus,
   //       receiptUrls,
-  //       orderStatus: "pending",
+  //       receipts: [],
+  //       orderStatus: "custom", // Set as custom order
   //     });
   
   //     await newOrder.save();
   
-  //     // Optionally emit a notification to the user
-  //     io.emit("orderStatusUpdate", {
+  //     // Populate order details for notification
+  //     const populatedOrder = await OrderModel.findById(newOrder._id)
+  //       .populate('userId', 'username email phoneNumber')
+  //       .populate({
+  //         path: 'items.productId',
+  //         select: 'name images'
+  //       })
+  //       .populate({
+  //         path: 'items.variation.color',
+  //         select: 'name code'
+  //       })
+  //       .populate({
+  //         path: 'items.variation.size',
+  //         select: 'name value'
+  //       });
+  
+  //     // Emit a notification to the user
+  //     io.emit(`user-${userId}`, {
+  //       type: 'new-custom-order',
   //       message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
-  //       orderId: newOrder._id,
+  //       order: populatedOrder
+  //     });
+  
+  //     // Also emit to a general channel for admin dashboard
+  //     io.emit('new-order', {
+  //       message: `New custom order created for user: ${userName}`,
+  //       order: populatedOrder
   //     });
   
   //     res.status(201).json({
@@ -409,26 +323,54 @@ export const OrderController = {
   //       totalAmount,
   //       paidAmount: paidAmt,
   //       dueAmount,
+  //       user: {
+  //         id: user._id,
+  //         username: user.username,
+  //         email: user.email,
+  //         phoneNumber: user.phoneNumber
+  //       },
+  //       orderDetails: populatedOrder
   //     });
   //   } catch (error) {
   //     console.error("Error creating custom order:", error);
-  //     next(error);
+  //     res.status(500).json({ 
+  //       message: "Failed to create custom order", 
+  //       error: error instanceof Error ? error.message : "Unknown error" 
+  //     });
   //   }
   // },
-
+  
   createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userName, products, paymentType } = req.body;
       let paidAmt: number = Number(req.body.paidAmount) || 0;
   
-      // Validate inputs
-      if (!userName || !Array.isArray(products) || products.length === 0) {
-        res.status(400).json({ message: "User name and product list are required." });
+      // Sanitize inputs
+      const sanitizedUserName = userName ? String(userName).trim() : '';
+  
+      // Validate required inputs
+      if (!sanitizedUserName) {
+        res.status(400).json({ message: "User name is required." });
+        return;
+      }
+  
+      if (!Array.isArray(products) || products.length === 0) {
+        res.status(400).json({ message: "Product list is required and must be a non-empty array." });
+        return;
+      }
+  
+      if (!['full', 'partial', 'cod'].includes(paymentType)) {
+        res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
+        return;
+      }
+  
+      if (isNaN(paidAmt) || paidAmt < 0) {
+        res.status(400).json({ message: "Paid amount must be a non-negative number." });
         return;
       }
   
       // Find user by name
-      const user = await UserModel.findOne({ username: userName });
+      const user = await UserModel.findOne({ username: sanitizedUserName });
       if (!user) {
         res.status(404).json({ message: "User not found." });
         return;
@@ -436,88 +378,27 @@ export const OrderController = {
   
       const userId = user._id;
   
-      let totalAmount = 0;
-      let validatedItems = [];
-      
-      // Validate each product and calculate total amount using product price from variations
-      for (const item of products) {
-        const product = await ProductModel.findById(item.productId)
-          .populate("variations.color")
-          .populate("variations.size");
+      // Validate products and calculate total amount
+      // const session = await mongoose.startSession();
+      // session.startTransaction();
+      const productsValidation = await validateProducts(products);
+    if (!productsValidation.isValid) {
+      res.status(400).json({
+        message: productsValidation.message,
+        details: productsValidation.data
+      });
+      return;
+    }
   
-        if (!product) {
-          res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
-          return;
-        }
-  
-        // Filter out inactive variations (color and size should be active)
-        const activeVariations = product.variations.filter((v: any) =>
-          v.color.active && v.size.active
-        );
-  
-        // If no active variations are found
-        if (activeVariations.length === 0) {
-          res.status(400).json({
-            message: `No active variations found for product ${product.name}.`
-          });
-          return;
-        }
-  
-        // Find the variation based on color and size
-        const variation = activeVariations.find((v) =>
-          v.color._id.toString() === item.color.toString() &&
-          v.size._id.toString() === item.size.toString()
-        );
-  
-        // If no matching variation is found, return the error with available variations
-        if (!variation) {
-          res.status(400).json({
-            message: `No matching variation found for product ${product.name}.`,
-            availableVariations: activeVariations.map(async v => ({
-              color: v.color._id,
-              colorName: (await ColorModel.findById(v.color))?.colorName,
-              size: v.size._id,
-              sizeName: v.size,
-              price: v.price
-            }))
-          });
-          return;
-        }
-  
-        // Calculate the total amount using the variation price
-        totalAmount += variation.price * item.quantity;
-        
-        // Format the item according to the schema
-        validatedItems.push({
-          productId: item.productId,
-          quantity: item.quantity,
-          variation: {
-            color: item.color,
-            size: item.size
-          }
-        });
-      }
+      const { validatedItems, totalAmount } = productsValidation.data;
   
       // Calculate payment details
-      let dueAmount = totalAmount - paidAmt;
-      let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
-  
-      if (paymentType === "full") {
-        dueAmount = 0;
-        paymentStatus = "Paid";
-      } else if (paymentType === "partial") {
-        paymentStatus = dueAmount > 0 ? "Partial" : "Paid";
-      } else if (paymentType === "cod") {
-        dueAmount = totalAmount;
-        paidAmt = 0;
-        paymentStatus = "Pending";
-      }
+      const paymentDetails = calculatePaymentDetails(totalAmount, paidAmt, paymentType);
   
       // Fallback values for contact details if not provided
-      const contactName = req.body.contactName || user.username || userName;
+      const contactName = req.body.contactName || user.username || sanitizedUserName;
       const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
       const deliverTo = req.body.deliverTo || "Default Address";
-      const receiptUrls: string[] = [];
   
       // Create the order with properly structured items
       const newOrder = new OrderModel({
@@ -527,11 +408,11 @@ export const OrderController = {
         contactNumber,
         deliverTo,
         totalAmount,
-        paidAmount: paidAmt,
-        dueAmount,
+        paidAmount: paymentDetails.paidAmount,
+        dueAmount: paymentDetails.dueAmount,
         paymentType,
-        paymentStatus,
-        receiptUrls,
+        paymentStatus: paymentDetails.paymentStatus,
+        receiptUrls: [],
         receipts: [],
         orderStatus: "custom", // Set as custom order
       });
@@ -553,43 +434,40 @@ export const OrderController = {
           path: 'items.variation.size',
           select: 'name value'
         });
-  
-      // Emit a notification to the user
+
+      // Emit notifications
       io.emit(`user-${userId}`, {
         type: 'new-custom-order',
         message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
         order: populatedOrder
-      });
-  
-      // Also emit to a general channel for admin dashboard
-      io.emit('new-order', {
-        message: `New custom order created for user: ${userName}`,
-        order: populatedOrder
-      });
-  
+    });
+      // Send successful response
       res.status(201).json({
         message: "Custom order created successfully.",
         orderId: newOrder._id,
         totalAmount,
-        paidAmount: paidAmt,
-        dueAmount,
+        paidAmount: paymentDetails.paidAmount,
+        dueAmount: paymentDetails.dueAmount,
         user: {
           id: user._id,
           username: user.username,
           email: user.email,
           phoneNumber: user.phoneNumber
         },
-        orderDetails: populatedOrder
+        orderDetails: newOrder
       });
+  
     } catch (error) {
+      // Handle error
       console.error("Error creating custom order:", error);
-      res.status(500).json({ 
-        message: "Failed to create custom order", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
     }
   },
   
+
+  
+
   getAllOrders: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       console.log("🔍 Fetching Orders...");
@@ -724,11 +602,6 @@ export const OrderController = {
     }
   },
 
-
- 
-
-  
-  
   
   
   getCompleteOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -767,6 +640,8 @@ export const OrderController = {
       next(error);
     }
   },
+
+ 
   
   
 
@@ -831,6 +706,33 @@ export const OrderController = {
   
       if (orders.length === 0) {
          res.status(404).json({ message: "No partial orders found." });
+         return
+      }
+  
+      // Return the partial orders along with the total count of partial orders
+      res.status(200).json({
+        totalCount: orders.length,
+        orders
+      });
+    } catch (error) {
+      console.error("Error Fetching 'Partial' Orders:", error);
+      next(error);
+    }
+  },
+
+  getPaymentPaid: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Filter for orders with "partial" payment status
+      const filter: any = { paymentStatus: "Paid" };
+  
+      // Fetch partial orders with user and product details populated
+      const orders = await OrderModel.find(filter)
+        .populate("items.productId")  // Populate product details
+        .populate("userId", "username email phone")  // Populate user details
+        .lean();
+  
+      if (orders.length === 0) {
+         res.status(404).json({ message: "No Paid orders found." });
          return
       }
   
@@ -1168,7 +1070,150 @@ export const OrderController = {
       next(error);
     }
   },
+
 };
+
+async function validateProducts(products: ProductItem[]): Promise<ValidationResult> {
+  let validatedItems = [];
+  let totalAmount = 0;
+  
+  try {
+    for (const item of products) {
+      if (!item.productId || !item.color || !item.size || !item.quantity) {
+        return {
+          isValid: false,
+          message: "Each product must have productId, color, size, and quantity."
+        };
+      }
+      
+      if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+        return {
+          isValid: false,
+          message: "Product quantity must be a positive number."
+        };
+      }
+      
+      // Find the product
+      const product = await ProductModel.findById(item.productId)
+        .populate("variations.color")
+        .populate("variations.size")
+        // .session(session);
+      
+      if (!product) {
+        return {
+          isValid: false,
+          message: `Product with ID ${item.productId} not found.`
+        };
+      }
+      
+      // Filter out inactive variations
+      const activeVariations = product.variations.filter((v: any) =>
+        v.color.active && v.size.active
+      );
+      
+      if (activeVariations.length === 0) {
+        return {
+          isValid: false,
+          message: `No active variations found for product ${product.name}.`
+        };
+      }
+      
+      // Find the matching variation
+      const variation = activeVariations.find((v: any) =>
+        v.color._id.toString() === item.color.toString() &&
+        v.size._id.toString() === item.size.toString()
+      );
+      
+      if (!variation) {
+        // Get available variations info
+        const availableVariations = await Promise.all(
+          activeVariations.map(async (v: any) => ({
+            color: v.color._id,
+            colorName: (await ColorModel.findById(v.color))?.colorName,
+            size: v.size._id,
+            sizeName: v.size,
+            price: v.price
+          }))
+        );
+        
+        return {
+          isValid: false,
+          message: `No matching variation found for product ${product.name}.`,
+          data: { availableVariations }
+        };
+      }
+      
+      // Calculate the total amount using the variation price
+      totalAmount += variation.price * item.quantity;
+      
+      // Format the item according to the schema
+      validatedItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        variation: {
+          color: item.color,
+          size: item.size
+        }
+      });
+    }
+    
+    return {
+      isValid: true,
+      data: { validatedItems, totalAmount }
+    };
+    
+  } catch (error) {
+    throw error; // Let the calling function handle this error
+  }
+}
+
+function calculatePaymentDetails(totalAmount: number, paidAmt: number, paymentType: string) {
+  let dueAmount = totalAmount - paidAmt;
+  let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
+  
+  switch (paymentType) {
+    case "full":
+      dueAmount = 0;
+      paidAmt = totalAmount;
+      paymentStatus = "Paid";
+      break;
+    
+    case "partial":
+      if (paidAmt <= 0) {
+        paymentStatus = "Pending";
+      } else if (paidAmt >= totalAmount) {
+        dueAmount = 0;
+        paidAmt = totalAmount;
+        paymentStatus = "Paid";
+      } else {
+        paymentStatus = "Partial";
+      }
+      break;
+    
+    case "cod":
+      dueAmount = totalAmount;
+      paidAmt = 0;
+      paymentStatus = "Pending";
+      break;
+  }
+  
+  return {
+    dueAmount,
+    paidAmount: paidAmt,
+    paymentStatus
+  };
+}
+
+function formatValidationError(error: mongoose.Error.ValidationError) {
+  const formattedErrors: Record<string, string> = {};
+  
+  for (const field in error.errors) {
+    formattedErrors[field] = error.errors[field].message;
+  }
+  
+  return formattedErrors;
+}
+
 
 export const { placeOrder, getAllOrders, getOrderStatus, updateOrderStatus, deleteOrder,createCustomOrderByName } = OrderController;
 

@@ -50,26 +50,22 @@ const EarningsController = {
     }
   },
 
-
-
-      
+  
   // getEarningsDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   //   try {
   //     const { type } = req.params;
-  //     let filter = {};
+  //     let filter: any = {};
   //     let totalEarnings = 0;
   //     let yearlyEarnings = 0;
   //     let todayEarnings = 0;
   //     let pendingPayments = 0;
   //     let manualPayments = 0;
-
+  
   //     // Date Filters
   //     const startOfMonth = moment().startOf("month").toDate();
   //     const startOfYear = moment().startOf("year").toDate();
   //     const startOfToday = moment().startOf("day").toDate();
-
-  //     console.log("Start of Today: ", startOfToday);  // Debugging the date filter for today
-
+  
   //     // Fetch earnings summary
   //     const [
   //       totalEarningsAgg,
@@ -79,88 +75,132 @@ const EarningsController = {
   //       manualPaymentsAgg
   //     ] = await Promise.all([
   //       PaymentModel.aggregate([
-  //         { $match: { status: "Paid" } }, // Only Paid payments
+  //         { $match: { status: { $in: ["Paid", "succeeded"] } } }, // Match "Paid" or "succeeded"
   //         { $group: { _id: null, total: { $sum: "$amount" } } }
   //       ]),
-
+  
   //       PaymentModel.aggregate([
-  //         { $match: { status: "Paid", createdAt: { $gte: startOfYear } } }, // Filter for this year
+  //         { $match: { status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfYear } } }, // Filter for this year
   //         { $group: { _id: null, total: { $sum: "$amount" } } }
   //       ]),
-
+  
   //       PaymentModel.aggregate([
-  //         { $match: { status: "Paid", createdAt: { $gte: startOfToday } } }, // Filter for today
+  //         { $match: { status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfToday } } }, // Filter for today
   //         { $group: { _id: null, total: { $sum: "$amount" } } }
   //       ]),
-
+  
   //       OrderModel.aggregate([
   //         { $match: { paymentStatus: { $ne: "Paid" } } },
   //         { $group: { _id: null, total: { $sum: "$dueAmount" } } }
   //       ]),
-
+  
   //       PaymentModel.aggregate([
-  //         { $match: { paymentType: "manual", status: "Paid" } }, // Only manual payments with status Paid
+  //         { $match: { paymentType: "manual", status: { $in: ["Paid", "succeeded"] } } }, // Only manual payments with "Paid" or "succeeded"
   //         { $group: { _id: null, total: { $sum: "$amount" } } }
   //       ])
   //     ]);
-
+  
   //     // Ensure that values default to 0 if aggregation returns no data
   //     totalEarnings = totalEarningsAgg.length > 0 ? totalEarningsAgg[0].total : 0;
   //     yearlyEarnings = yearlyEarningsAgg.length > 0 ? yearlyEarningsAgg[0].total : 0;
   //     todayEarnings = todayEarningsAgg.length > 0 ? todayEarningsAgg[0].total : 0;
   //     pendingPayments = pendingPaymentsAgg.length > 0 ? pendingPaymentsAgg[0].total : 0;
   //     manualPayments = manualPaymentsAgg.length > 0 ? manualPaymentsAgg[0].total : 0;
-
-  //     // Determine filter for fetching transactions
+  
+  //     let transactions = [];
+  
+  //     // Determine filter and fetch transactions based on type
   //     switch (type) {
+
+  //       case "totalEarnings":
+  //         transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfMonth } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "orderId",
+  //             populate: {
+  //               path: "items.productId",
+  //               select: "name file"
+  //             }
+  //           })
+  //           .select("_id orderId amount userId")
+  //           .lean();
+  //         break;
+
   //       case "monthlyEarnings":
-  //         filter = { status: "Paid", createdAt: { $gte: startOfMonth } };
+  //         transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfMonth } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "orderId",
+  //             populate: {
+  //               path: "items.productId",
+  //               select: "name file"
+  //             }
+  //           })
+  //           .select("_id orderId amount userId")
+  //           .lean();
   //         break;
+  
   //       case "yearlyEarnings":
-  //         filter = { status: "Paid", createdAt: { $gte: startOfYear } };
+  //         transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfYear } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "orderId",
+  //             populate: {
+  //               path: "items.productId",
+  //               select: "name file"
+  //             }
+  //           })
+  //           .select("_id orderId amount userId")
+  //           .lean();
   //         break;
+  
   //       case "todayEarnings":
-  //         filter = { status: "Paid", createdAt: { $gte: startOfToday } }; // Filter for today
+  //         transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfToday } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "orderId",
+  //             populate: {
+  //               path: "items.productId",
+  //               select: "name file"
+  //             }
+  //           })
+  //           .select("_id orderId amount userId")
+  //           .lean();
   //         break;
+  
   //       case "pendingPayments":
-  //         filter = { paymentStatus: { $ne: "Paid" } };
+  //         transactions = await OrderModel.find({ paymentStatus: { $ne: "Paid" } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "items.productId",
+  //             select: "name file"
+  //           })
+  //           .select("_id dueAmount userId items")
+  //           .lean();
   //         break;
+  
   //       case "manualPayments":
-  //         filter = { paymentType: "manual", status: "Paid" };
+  //         transactions = await PaymentModel.find({ paymentType: "manual", status: { $in: ["Paid", "succeeded"] } })
+  //           .populate("userId", "username")
+  //           .populate({
+  //             path: "orderId",
+  //             populate: {
+  //               path: "items.productId",
+  //               select: "name file"
+  //             }
+  //           })
+  //           .select("_id orderId amount userId")
+  //           .lean();
   //         break;
+  
   //       default:
   //         res.status(400).json({ error: "Invalid earnings type" });
   //         return;
   //     }
-
-  //     // Fetch transactions with proper population
-  //     let transactions;
-  //     if (type === "pendingPayments") {
-  //       transactions = await OrderModel.find(filter)
-  //         .populate("userId", "username") // Fetch username
-  //         .populate({
-  //           path: "items.productId",
-  //           select: "name file" // Fetch product name & images
-  //         })
-  //         .select("_id dueAmount userId items") // Select necessary fields
-  //         .lean();
-  //     } else {
-  //       transactions = await PaymentModel.find(filter)
-  //         .populate("userId", "username") // Fetch username
-  //         .populate({
-  //           path: "orderId",
-  //           populate: {
-  //             path: "items.productId",
-  //             select: "name file" // Fetch product name & images
-  //           }
-  //         })
-  //         .select("_id orderId amount userId") // Select necessary fields
-  //         .lean();
-  //     }
-
-  //     // ✅ Correctly Handle Transactions (Order vs. Payment)
+  
+  //     // Format transactions based on their source (PaymentModel or OrderModel)
   //     const formattedTransactions = transactions.map(tx => {
-  //       if ("orderId" in tx && typeof tx.orderId === "object") {
+  //       if ("orderId" in tx && tx.orderId) {
   //         // Payment Transaction - Extract from `orderId`
   //         const order = tx.orderId as any;
   //         return {
@@ -205,12 +245,12 @@ const EarningsController = {
   //         };
   //       }
   //     });
-
+  
   //     // Log if transactions are empty
   //     if (!formattedTransactions || formattedTransactions.length === 0) {
   //       console.log(`No transactions found for ${type}`);
   //     }
-
+  
   //     res.status(200).json({
   //       type,
   //       totalEarnings,
@@ -219,12 +259,12 @@ const EarningsController = {
   //       pendingPayments,
   //       manualPayments,
   //       transactions: formattedTransactions
-  //     });
+  //     })
   //   } catch (error) {
-  //     console.error("Error fetching earnings details:", error);
   //     next(error);
+  //   };
   //   }
-  // }
+  // };
   getEarningsDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { type } = req.params;
@@ -240,7 +280,9 @@ const EarningsController = {
       const startOfYear = moment().startOf("year").toDate();
       const startOfToday = moment().startOf("day").toDate();
   
-      // Fetch earnings summary
+      console.log("Start of Today: ", startOfToday);  // Debugging the date filter for today
+  
+      // Fetch earnings summary using aggregation
       const [
         totalEarningsAgg,
         yearlyEarningsAgg,
@@ -248,33 +290,38 @@ const EarningsController = {
         pendingPaymentsAgg,
         manualPaymentsAgg
       ] = await Promise.all([
+        // Total earnings aggregation for "Paid" and "succeeded" payments
         PaymentModel.aggregate([
           { $match: { status: { $in: ["Paid", "succeeded"] } } }, // Match "Paid" or "succeeded"
           { $group: { _id: null, total: { $sum: "$amount" } } }
         ]),
   
+        // Yearly earnings aggregation for "Paid" and "succeeded" payments
         PaymentModel.aggregate([
           { $match: { status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfYear } } }, // Filter for this year
           { $group: { _id: null, total: { $sum: "$amount" } } }
         ]),
   
+        // Today's earnings aggregation for "Paid" and "succeeded" payments
         PaymentModel.aggregate([
           { $match: { status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfToday } } }, // Filter for today
           { $group: { _id: null, total: { $sum: "$amount" } } }
         ]),
   
+        // Pending payments aggregation (orders that are not marked as "Paid")
         OrderModel.aggregate([
           { $match: { paymentStatus: { $ne: "Paid" } } },
           { $group: { _id: null, total: { $sum: "$dueAmount" } } }
         ]),
   
+        // Manual payments aggregation (only "manual" payments with "Paid" status)
         PaymentModel.aggregate([
-          { $match: { paymentType: "manual", status: { $in: ["Paid", "succeeded"] } } }, // Only manual payments with "Paid" or "succeeded"
+          { $match: { paymentType: "manual", status: { $in: ["Paid", "succeeded"] } } }, // Filter manual payments with "Paid" or "succeeded"
           { $group: { _id: null, total: { $sum: "$amount" } } }
         ])
       ]);
   
-      // Ensure that values default to 0 if aggregation returns no data
+      // Ensure values default to 0 if aggregation returns no data
       totalEarnings = totalEarningsAgg.length > 0 ? totalEarningsAgg[0].total : 0;
       yearlyEarnings = yearlyEarningsAgg.length > 0 ? yearlyEarningsAgg[0].total : 0;
       todayEarnings = todayEarningsAgg.length > 0 ? todayEarningsAgg[0].total : 0;
@@ -283,8 +330,22 @@ const EarningsController = {
   
       let transactions = [];
   
-      // Determine filter and fetch transactions based on type
+      // Determine filter and fetch transactions based on the earnings type (monthly, yearly, etc.)
       switch (type) {
+        case "totalEarnings":
+          transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] } })
+            .populate("userId", "username")
+            .populate({
+              path: "orderId",
+              populate: {
+                path: "items.productId",
+                select: "name file"
+              }
+            })
+            .select("_id orderId amount userId")
+            .lean();
+          break;
+  
         case "monthlyEarnings":
           transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] }, createdAt: { $gte: startOfMonth } })
             .populate("userId", "username")
@@ -418,14 +479,12 @@ const EarningsController = {
         pendingPayments,
         manualPayments,
         transactions: formattedTransactions
-      })
+      });
     } catch (error) {
+      console.error("Error fetching earnings details:", error);
       next(error);
-    };
     }
-  };
-  
-
-
+  }
+};
 
 export default EarningsController;

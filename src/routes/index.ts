@@ -10,6 +10,7 @@ import AuthRoutes from '../app/modules/auth/auth.routes'
 import productAttributeRoutes from '../../src/app/modules/product/productAttributeRoutes'
 import categoryRoutes from '../app/modules/category/categoryRoutes'
 import legalDocumentRoute from '../app/modules/legalDoc/legalDocument.routes';
+import advvartaisement from '../app/modules/advartaisement/adv.route';
 // import productRoute from '../app/modules/product/product.routes'
 
 
@@ -27,6 +28,7 @@ const apiRoutes = [
   { path: '/products', route: ProductRoutes },
   { path: '/product-attributes', route: productAttributeRoutes },
   { path: '/categories', route: categoryRoutes},
+  { path: '/ads', route:advvartaisement },
   // product-attributes
   { path: '/orders', route: OrderRoutes },
   { path: '/admin', route: adminRoutes },

@@ -436,6 +436,8 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
         id: user._id,    // Include user ID
         name: user.username,
         email: user.email,
+        active: user.active || false || true,  // Include active status
+
         
       })),  
     });

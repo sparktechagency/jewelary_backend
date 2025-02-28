@@ -23,30 +23,7 @@ import { AdminModel, IAdmin } from "../../models/admin.model";
 import bcrypt from 'bcrypt';
 import mongoose from "mongoose";
 
-// export const AuthController = {
-//   login: async  (req: Request, res: Response, next: NextFunction): Promise<void> =>{
-//     const { email, password } = req.body;
-//     try {
-//       // Authenticate admin and get the JWT token
-//       const result = await AuthService.authenticate(email, password);
 
-//       // Return JWT token and other user details
-//       res.status(200).json({
-//         message: "Login successful",
-//         token: result.token,
-//         role: result.role,
-//         email: result.email,
-//         id: result.id,  // Admin ID returned from AuthService
-//       });
-//     } catch (error) {
-//       // Error handling for invalid credentials
-//       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-//       res.status(401).json({ error: errorMessage });
-//     }
-//   },
- 
-
-// };
 export const AuthController = {
   login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { email, password } = req.body;
