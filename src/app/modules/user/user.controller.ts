@@ -201,39 +201,60 @@ export const UserController = {
       next(error);
     }
   },
+
   updateActiveStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
       const { active } = req.body;
   
+      console.log("🔍 Incoming User ID:", id);
+      console.log("🔍 Active Status from Request:", active);
+      console.log("🔍 User Making Request:", req.user);
+  
       // Validate that active is a boolean
       if (typeof active !== "boolean") {
-        res.status(400).json({ message: "Active status must be a boolean value." });
-        return;
+         res.status(400).json({ message: "Active status must be a boolean value." });
+         return
       }
   
-      // Check that the requester is an admin.
-      // This assumes your authentication middleware attaches the user object to req.user.
+      // Ensure the requester is an admin
       if (!req.user || (req.user as any).role !== "admin") {
-        res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
-        return;
+         res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
+         
+          return
       }
   
-      // Find the user to update
-      const user = await UserModel.findById(id);
-      if (!user) {
-        res.status(404).json({ message: "User not found." });
-        return;
+      // ✅ Find user before update
+      const existingUser = await UserModel.findById(id);
+      if (!existingUser) {
+         res.status(404).json({ message: "User not found." });
+         return
       }
   
-      user.active = active;
-      await user.save();
+      console.log("🔍 Existing User Status:", existingUser.active);
   
-      res.status(200).json({ message: "User active status updated.", active: user.active });
+      // ✅ Use `findByIdAndUpdate` for a direct DB update
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        id,
+        { $set: { active } }, // Ensure proper update
+        { new: true, runValidators: true } // Return updated document
+      );
+  
+      if (!updatedUser) {
+         res.status(404).json({ message: "User not found." });
+         return
+      }
+  
+      console.log("✅ Updated User Status:", updatedUser.active);
+  
+      res.status(200).json({ message: "User active status updated.", active: updatedUser.active });
+  
     } catch (error) {
+      console.error("❌ Error updating user:", error);
       next(error);
     }
   },
+  
   
   
   forgotPassword: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -424,8 +445,8 @@ changePassword: async (req: Request, res: Response, next: NextFunction): Promise
 // Get all users (accessible only to admin)
 getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Find all users and select their _id and email
-    const users = await UserModel.find({}, "_id  username email");
+    // ✅ Explicitly select `_id`, `username`, `email`, and `active`
+    const users = await UserModel.find({}, "_id username email active");
 
     // Get the total number of users
     const totalUsers = users.length;
@@ -433,18 +454,17 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
     res.json({
       totalUsers,
       users: users.map(user => ({
-        id: user._id,    // Include user ID
+        id: user._id,
         name: user.username,
         email: user.email,
-        active: user.active || false || true,  // Include active status
-
-        
+        active: user.active,  // ✅ Now this field is included
       })),  
     });
   } catch (error) {
     next(error); // Pass error to middleware
   }
 },
+
 
 // userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //   try {

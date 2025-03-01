@@ -334,7 +334,7 @@ const EarningsController = {
       switch (type) {
         case "totalEarnings":
           transactions = await PaymentModel.find({ status: { $in: ["Paid", "succeeded"] } })
-            .populate("userId", "username")
+            .populate("userId", "username", UserModel)
             .populate({
               path: "orderId",
               populate: {

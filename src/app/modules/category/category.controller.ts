@@ -14,42 +14,50 @@ import ProductModel from "../../models/Product";
 
 export const CategoryController = {
 
-    create: async (req: Request, res: Response): Promise<void> => {
-      uploadCategory(req, res, async (err: any) => {
-        if (err) {
-          console.error("🚨 Multer Error:", err);
-          return res.status(400).json({ message: err.message });
+  create: async (req: Request, res: Response): Promise<void> => {
+    uploadCategory(req, res, async (err: any) => {
+      if (err) {
+        console.error("🚨 Multer Error:", err);
+        return res.status(400).json({ message: err.message });
+      }
+  
+      console.log("📂 Uploaded Files:", req.files);
+      console.log("📝 Request Body:", req.body);
+  
+      try {
+        const { name } = req.body;
+  
+        // ✅ Extract uploaded file from `req.files["image"]`
+        const uploadedFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
+  
+        if (!uploadedFiles?.image || uploadedFiles.image.length === 0) {
+          return res.status(400).json({ message: "Image file is required." });
         }
   
-        console.log("📂 Uploaded File:", req.file);
-        console.log("📝 Request Body:", req.body);
+        // ✅ Get the first uploaded image
+        const image = `/uploads/categories/${uploadedFiles.image[0].filename}`;
   
-        try {
-          const { name } = req.body;
-          if (!req.file) {
-            return res.status(400).json({ message: "Image file is required." });
-          }
-  
-          const image = `/uploads/categories/${req.file.filename}`;
-  
-          if (!name || !image) {
-            return res.status(400).json({ message: "Name and Image are required for category creation." });
-          }
-  
-          // 🔍 Check if category exists before proceeding
-          const result = await CategoryService.create({ name, image });
-  
-          if (result.error) {
-            return res.status(409).json(result); // ✅ Return conflict status
-          }
-  
-          res.status(201).json(result);
-        } catch (error) {
-          console.error("🔥 Category creation error:", error);
-          res.status(500).json({ message: (error as Error).message });
+        if (!name) {
+          return res.status(400).json({ message: "Category name is required." });
         }
-      });
-    },
+  
+        // 🔍 Check if category exists before proceeding
+        const result = await CategoryService.create({ name, image });
+  
+        if (result.error) {
+          return res.status(409).json(result); // ✅ Return conflict status
+        }
+  
+        res.status(201).json(result);
+      } catch (error) {
+        console.error("🔥 Category creation error:", error);
+        res.status(500).json({ message: (error as Error).message });
+      }
+    });
+  },
+  
+
+  
   
     getCategories: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
@@ -91,8 +99,58 @@ export const CategoryController = {
     }
   },
 
+    // update: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    //   // Use the multer middleware for handling file upload (expects field 'image' for category image)
+    //   uploadCategory(req, res, async (err: any) => {
+    //     try {
+    //       // Handle multer errors
+    //       if (err instanceof multer.MulterError) {
+    //         return res.status(400).json({ message: `Multer Error: ${err.message}` });
+    //       }
+    //       if (err) {
+    //         return res.status(400).json({ message: err.message });
+    //       }
+  
+    //       // Log incoming request for debugging purposes
+    //       console.log("Update request body:", req.body);
+    //       console.log("Category ID:", req.params.id);
+  
+    //       const { id } = req.params;
+    //       const { active, name, image } = req.body;
+  
+    //       // Validate that at least one field to update is provided
+    //       const updateData: { active?: boolean; name?: string; image?: string } = {};
+  
+    //       if (active !== undefined) updateData.active = active;
+    //       if (name) updateData.name = name;
+    //       if (image) updateData.image = image;
+  
+    //       // If no valid fields are provided, return a 400 error
+    //       if (Object.keys(updateData).length === 0) {
+    //         return res.status(400).json({ message: "No valid fields provided for update." });
+    //       }
+  
+    //       // Call the CategoryService update method
+    //       const updatedCategory = await CategoryService.update(id, updateData);
+  
+    //       // If no category was found with the provided ID, return a 404 error
+    //       if (!updatedCategory) {
+    //         return res.status(404).json({ message: "Category not found with this ID." });
+    //       }
+  
+    //       // Return the updated category
+    //       res.status(200).json({
+    //         message: "Category updated successfully",
+    //         category: updatedCategory,
+    //       });
+    //     } catch (error: any) {
+    //       console.error("Error updating category:", error);
+    //       next(error);
+    //     }
+    //   });
+    // },
+  
     update: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      // Use the multer middleware for handling file upload (expects field 'image' for category image)
       uploadCategory(req, res, async (err: any) => {
         try {
           // Handle multer errors
@@ -102,46 +160,56 @@ export const CategoryController = {
           if (err) {
             return res.status(400).json({ message: err.message });
           }
-  
-          // Log incoming request for debugging purposes
-          console.log("Update request body:", req.body);
-          console.log("Category ID:", req.params.id);
-  
+    
+          // Log incoming request for debugging
+          console.log("📩 Update request body:", req.body);
+          console.log("📂 Uploaded Files:", req.files);
+          console.log("🆔 Category ID:", req.params.id);
+    
           const { id } = req.params;
-          const { active, name, image } = req.body;
-  
-          // Validate that at least one field to update is provided
+          const { active, name } = req.body;
+    
+          // ✅ Extract uploaded image from `req.files`
+          const uploadedFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
+          let imagePath: string | undefined;
+    
+          if (uploadedFiles?.image?.length > 0) {
+            imagePath = `/uploads/categories/${uploadedFiles.image[0].filename}`; // ✅ Construct the correct file path
+          }
+    
+          // ✅ Validate at least one field is provided for update
           const updateData: { active?: boolean; name?: string; image?: string } = {};
-  
+    
           if (active !== undefined) updateData.active = active;
           if (name) updateData.name = name;
-          if (image) updateData.image = image;
-  
-          // If no valid fields are provided, return a 400 error
+          if (imagePath) updateData.image = imagePath; // ✅ Ensure image path is updated
+    
+          // If no valid fields are provided, return an error
           if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ message: "No valid fields provided for update." });
           }
-  
-          // Call the CategoryService update method
+    
+          // ✅ Call the `CategoryService.update` method
           const updatedCategory = await CategoryService.update(id, updateData);
-  
-          // If no category was found with the provided ID, return a 404 error
+    
+          // If no category found, return 404 error
           if (!updatedCategory) {
             return res.status(404).json({ message: "Category not found with this ID." });
           }
-  
-          // Return the updated category
+    
+          // ✅ Return the updated category
           res.status(200).json({
             message: "Category updated successfully",
             category: updatedCategory,
           });
+    
         } catch (error: any) {
-          console.error("Error updating category:", error);
+          console.error("❌ Error updating category:", error);
           next(error);
         }
       });
     },
-  
+    
   
 
   delete: async (req: Request, res: Response) => {

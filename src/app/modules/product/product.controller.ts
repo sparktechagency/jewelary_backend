@@ -101,20 +101,24 @@ export const ProductController = {
     }
 
     // Build fileUrls from uploaded images if available
-    let fileUrls: string[] = [];
-    if (req.files && (req.files as any)["files"]) {
-      const projectRoot = path.resolve(__dirname, '../../../');
-      fileUrls = (req.files as any)["files"].map((file: Express.Multer.File) => {
-        let relPath = path.relative(projectRoot, file.path);
-        if (!relPath.startsWith(path.sep)) {
-          relPath = path.sep + relPath;
+    // let fileUrls: string[] = [];
+    // if (req.files && (req.files as any)["files"]) {
+    //   const projectRoot = path.resolve(__dirname, '../../../');
+    //   fileUrls = (req.files as any)["files"].map((file: Express.Multer.File) => {
+    //     let relPath = path.relative(projectRoot, file.path);
+    //     if (!relPath.startsWith(path.sep)) {
+    //       relPath = path.sep + relPath;
+    //     }
+        let fileUrls: string[] = [];
+        if (req.files && (req.files as any)["fileUrls"]) {
+          fileUrls = (req.files as any)["fileUrls"].map((file: Express.Multer.File) => `/uploads/products/${file.filename}`);
         }
-        return relPath;
-      });
-    } else {
-      // Handle case where no files are uploaded
-      fileUrls = [];
-    }
+    //     return relPath;
+    //   });
+    // } else {
+    //   // Handle case where no files are uploaded
+    //   fileUrls = [];
+    // }
 
     // Build productData from the request body
     const productData = {
@@ -126,7 +130,11 @@ export const ProductController = {
       deliveryCharge: req.body.deliveryCharge,
       variations,
       fileUrls,  // Use the URLs from uploaded files
-    };
+    }  
+    
+    // Save productData to the database
+
+    // await productData.save(); // Removed as productData is a plain object
 
     // Create product via service
     const product = await ProductService.create(productData);
@@ -137,6 +145,7 @@ export const ProductController = {
       .populate("variations.color")
       .populate("variations.size")
       .exec();
+      productData
 
     res.status(201).json(populatedProduct);
   } catch (error: any) {

@@ -26,6 +26,8 @@ interface ValidationResult {
   data?: any;
 }
 
+
+
 export const OrderController = {
 
 
@@ -166,19 +168,38 @@ export const OrderController = {
   },
   
 
+ 
   // createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   //   try {
   //     const { userName, products, paymentType } = req.body;
   //     let paidAmt: number = Number(req.body.paidAmount) || 0;
   
-  //     // Validate inputs
-  //     if (!userName || !Array.isArray(products) || products.length === 0) {
-  //       res.status(400).json({ message: "User name and product list are required." });
+  //     // Sanitize inputs
+  //     const sanitizedUserName = userName ? String(userName).trim() : '';
+  
+  //     // Validate required inputs
+  //     if (!sanitizedUserName) {
+  //       res.status(400).json({ message: "User name is required." });
+  //       return;
+  //     }
+  
+  //     if (!Array.isArray(products) || products.length === 0) {
+  //       res.status(400).json({ message: "Product list is required and must be a non-empty array." });
+  //       return;
+  //     }
+  
+  //     if (!['full', 'partial', 'cod'].includes(paymentType)) {
+  //       res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
+  //       return;
+  //     }
+  
+  //     if (isNaN(paidAmt) || paidAmt < 0) {
+  //       res.status(400).json({ message: "Paid amount must be a non-negative number." });
   //       return;
   //     }
   
   //     // Find user by name
-  //     const user = await UserModel.findOne({ username: userName });
+  //     const user = await UserModel.findOne({ username: sanitizedUserName });
   //     if (!user) {
   //       res.status(404).json({ message: "User not found." });
   //       return;
@@ -186,88 +207,27 @@ export const OrderController = {
   
   //     const userId = user._id;
   
-  //     let totalAmount = 0;
-  //     let validatedItems = [];
-      
-  //     // Validate each product and calculate total amount using product price from variations
-  //     for (const item of products) {
-  //       const product = await ProductModel.findById(item.productId)
-  //         .populate("variations.color")
-  //         .populate("variations.size");
+  //     // Validate products and calculate total amount
+  //     // const session = await mongoose.startSession();
+  //     // session.startTransaction();
+  //     const productsValidation = await validateProducts(products);
+  //   if (!productsValidation.isValid) {
+  //     res.status(400).json({
+  //       message: productsValidation.message,
+  //       details: productsValidation.data
+  //     });
+  //     return;
+  //   }
   
-  //       if (!product) {
-  //         res.status(404).json({ message: `Product with ID ${item.productId} not found.` });
-  //         return;
-  //       }
-  
-  //       // Filter out inactive variations (color and size should be active)
-  //       const activeVariations = product.variations.filter((v: any) =>
-  //         v.color.active && v.size.active
-  //       );
-  
-  //       // If no active variations are found
-  //       if (activeVariations.length === 0) {
-  //         res.status(400).json({
-  //           message: `No active variations found for product ${product.name}.`
-  //         });
-  //         return;
-  //       }
-  
-  //       // Find the variation based on color and size
-  //       const variation = activeVariations.find((v) =>
-  //         v.color._id.toString() === item.color.toString() &&
-  //         v.size._id.toString() === item.size.toString()
-  //       );
-  
-  //       // If no matching variation is found, return the error with available variations
-  //       if (!variation) {
-  //         res.status(400).json({
-  //           message: `No matching variation found for product ${product.name}.`,
-  //           availableVariations: activeVariations.map(async v => ({
-  //             color: v.color._id,
-  //             colorName: (await ColorModel.findById(v.color))?.colorName,
-  //             size: v.size._id,
-  //             sizeName: v.size,
-  //             price: v.price
-  //           }))
-  //         });
-  //         return;
-  //       }
-  
-  //       // Calculate the total amount using the variation price
-  //       totalAmount += variation.price * item.quantity;
-        
-  //       // Format the item according to the schema
-  //       validatedItems.push({
-  //         productId: item.productId,
-  //         quantity: item.quantity,
-  //         variation: {
-  //           color: item.color,
-  //           size: item.size
-  //         }
-  //       });
-  //     }
+  //     const { validatedItems, totalAmount } = productsValidation.data;
   
   //     // Calculate payment details
-  //     let dueAmount = totalAmount - paidAmt;
-  //     let paymentStatus: "Pending" | "Partial" | "Paid" = "Pending";
-  
-  //     if (paymentType === "full") {
-  //       dueAmount = 0;
-  //       paymentStatus = "Paid";
-  //     } else if (paymentType === "partial") {
-  //       paymentStatus = dueAmount > 0 ? "Partial" : "Paid";
-  //     } else if (paymentType === "cod") {
-  //       dueAmount = totalAmount;
-  //       paidAmt = 0;
-  //       paymentStatus = "Pending";
-  //     }
+  //     const paymentDetails = calculatePaymentDetails(totalAmount, paidAmt, paymentType);
   
   //     // Fallback values for contact details if not provided
-  //     const contactName = req.body.contactName || user.username || userName;
+  //     const contactName = req.body.contactName || user.username || sanitizedUserName;
   //     const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
   //     const deliverTo = req.body.deliverTo || "Default Address";
-  //     const receiptUrls: string[] = [];
   
   //     // Create the order with properly structured items
   //     const newOrder = new OrderModel({
@@ -277,11 +237,11 @@ export const OrderController = {
   //       contactNumber,
   //       deliverTo,
   //       totalAmount,
-  //       paidAmount: paidAmt,
-  //       dueAmount,
+  //       paidAmount: paymentDetails.paidAmount,
+  //       dueAmount: paymentDetails.dueAmount,
   //       paymentType,
-  //       paymentStatus,
-  //       receiptUrls,
+  //       paymentStatus: paymentDetails.paymentStatus,
+  //       receiptUrls: [],
   //       receipts: [],
   //       orderStatus: "custom", // Set as custom order
   //     });
@@ -303,44 +263,85 @@ export const OrderController = {
   //         path: 'items.variation.size',
   //         select: 'name value'
   //       });
-  
-  //     // Emit a notification to the user
+
+  //     // Emit notifications
   //     io.emit(`user-${userId}`, {
   //       type: 'new-custom-order',
   //       message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
   //       order: populatedOrder
-  //     });
-  
-  //     // Also emit to a general channel for admin dashboard
-  //     io.emit('new-order', {
-  //       message: `New custom order created for user: ${userName}`,
-  //       order: populatedOrder
-  //     });
-  
+  //   });
+  //     // Send successful response
   //     res.status(201).json({
   //       message: "Custom order created successfully.",
   //       orderId: newOrder._id,
   //       totalAmount,
-  //       paidAmount: paidAmt,
-  //       dueAmount,
+  //       paidAmount: paymentDetails.paidAmount,
+  //       dueAmount: paymentDetails.dueAmount,
   //       user: {
   //         id: user._id,
   //         username: user.username,
   //         email: user.email,
   //         phoneNumber: user.phoneNumber
   //       },
-  //       orderDetails: populatedOrder
+  //       orderDetails: newOrder
   //     });
+  
   //   } catch (error) {
+  //     // Handle error
   //     console.error("Error creating custom order:", error);
-  //     res.status(500).json({ 
-  //       message: "Failed to create custom order", 
-  //       error: error instanceof Error ? error.message : "Unknown error" 
-  //     });
+  //     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  //     res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
   //   }
   // },
   
-  createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+  
+  
+
+  // acceptOrCancelOrderController: async (req: Request, res: Response): Promise<void> => {
+  //   try {
+  //     const { orderId, action } = req.body;
+  
+  //     // Find the order by ID
+  //     const order = await OrderModel.findById(orderId);
+  //     if (!order) {
+  //        res.status(404).json({ message: "Order not found." });
+  //        return
+  //     }
+  
+  //     // Validate action
+  //     if (action !== "accept" && action !== "cancel") {
+  //        res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
+  //        return
+  //     }
+  
+  //     // Update order status
+  //     if (action === "accept") {
+  //       order.orderStatus = "running";
+  //     } else if (action === "cancel") {
+  //       order.orderStatus = "cancelled";
+  //     }
+  
+  //     await order.save();
+  
+  //     // Emit notification to the user (assuming the user is connected)
+  //     const socketId = userSocketMap[order.userId.toString()];
+  //     if (socketId) {
+  //       io.to(socketId).emit("order-status-updated", {
+  //         message: `Your order with ID: ${orderId} has been ${action}ed.`,
+  //         order
+  //       });
+  //     }
+  
+  //     res.status(200).json({ message: `Order ${action}ed successfully`, orderStatus: order.orderStatus });
+  
+  //   } catch (error) {
+  //     console.error("Error Fetching Custom Acceptence Orders:", error);
+  //     next(error);
+  //   }
+  // },
+ 
+ createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userName, products, paymentType } = req.body;
       let paidAmt: number = Number(req.body.paidAmount) || 0;
@@ -350,45 +351,40 @@ export const OrderController = {
   
       // Validate required inputs
       if (!sanitizedUserName) {
-        res.status(400).json({ message: "User name is required." });
-        return;
+         res.status(400).json({ message: "User name is required." });
+         return
       }
   
       if (!Array.isArray(products) || products.length === 0) {
-        res.status(400).json({ message: "Product list is required and must be a non-empty array." });
-        return;
+         res.status(400).json({ message: "Product list is required and must be a non-empty array." });
+         return
       }
   
       if (!['full', 'partial', 'cod'].includes(paymentType)) {
-        res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
-        return;
+         res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
+         return
       }
   
       if (isNaN(paidAmt) || paidAmt < 0) {
-        res.status(400).json({ message: "Paid amount must be a non-negative number." });
-        return;
+         res.status(400).json({ message: "Paid amount must be a non-negative number." });
+         return
       }
   
       // Find user by name
       const user = await UserModel.findOne({ username: sanitizedUserName });
       if (!user) {
-        res.status(404).json({ message: "User not found." });
-        return;
+         res.status(404).json({ message: "User not found." });
+         return
       }
   
       const userId = user._id;
   
       // Validate products and calculate total amount
-      // const session = await mongoose.startSession();
-      // session.startTransaction();
       const productsValidation = await validateProducts(products);
-    if (!productsValidation.isValid) {
-      res.status(400).json({
-        message: productsValidation.message,
-        details: productsValidation.data
-      });
-      return;
-    }
+      if (!productsValidation.isValid) {
+         res.status(400).json({ message: productsValidation.message, details: productsValidation.data });
+         return
+      }
   
       const { validatedItems, totalAmount } = productsValidation.data;
   
@@ -400,7 +396,7 @@ export const OrderController = {
       const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
       const deliverTo = req.body.deliverTo || "Default Address";
   
-      // Create the order with properly structured items
+      // Create the custom order with properly structured items
       const newOrder = new OrderModel({
         userId,
         items: validatedItems,
@@ -412,36 +408,25 @@ export const OrderController = {
         dueAmount: paymentDetails.dueAmount,
         paymentType,
         paymentStatus: paymentDetails.paymentStatus,
-        receiptUrls: [],
-        receipts: [],
-        orderStatus: "custom", // Set as custom order
+        orderStatus: "custom",  // Set as custom order
       });
   
       await newOrder.save();
   
-      // Populate order details for notification
-      const populatedOrder = await OrderModel.findById(newOrder._id)
-        .populate('userId', 'username email phoneNumber')
-        .populate({
-          path: 'items.productId',
-          select: 'name images'
-        })
-        .populate({
-          path: 'items.variation.color',
-          select: 'name code'
-        })
-        .populate({
-          path: 'items.variation.size',
-          select: 'name value'
-        });
-
-      // Emit notifications
-      io.emit(`user-${userId}`, {
-        type: 'new-custom-order',
+      // Create a notification for the user about the custom order
+      const notification = new NotificationModel({
+        userId: userId,
         message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
-        order: populatedOrder
-    });
-      // Send successful response
+        type: 'new-custom-order',
+        seen: false,
+      });
+      await notification.save();
+  
+  
+
+      io.emit(`notification::${newOrder.userId}`, {text: notification, type: "custom order created please accept", orderId: newOrder._id, orderStatus: "custom"});
+  
+      // Return the successful response with order details
       res.status(201).json({
         message: "Custom order created successfully.",
         orderId: newOrder._id,
@@ -454,17 +439,127 @@ export const OrderController = {
           email: user.email,
           phoneNumber: user.phoneNumber
         },
-        orderDetails: newOrder
+        orderDetails: newOrder,
       });
   
     } catch (error) {
-      // Handle error
       console.error("Error creating custom order:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
     }
   },
-  
+
+  updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const orderId = req.params.id;
+      const { status } = req.body; // Assuming 'status' is passed in the request body
+
+      // Valid status values for the order
+      const allowedStatuses = ["pending", "running", "completed", "custom", "custom:accepted", "custom:cancelled", "cancelled"];
+      if (!allowedStatuses.includes(status)) {
+        res.status(400).json({ message: "Invalid order status." });
+        return;
+      }
+
+      // Retrieve the order from the database
+      const order = await OrderModel.findById(orderId);
+      if (!order) {
+        res.status(404).json({ message: "Order not found." });
+        return;
+      }
+
+      // Validate the transition based on current orderStatus
+      if (order.orderStatus === "completed" && status !== "completed") {
+        res.status(400).json({
+          message: "Order is already completed. Cannot change to another status."
+        });
+        return;
+      }
+
+      if (order.orderStatus === "cancelled" && status !== "cancelled") {
+        res.status(200).json({
+          order});
+        return;
+      }
+
+      // If the status is valid, update the order status
+      order.orderStatus = status;
+      await order.save();
+
+      // Create a notification for the user
+      const notificationMessage = `Your order with ID ${orderId} has been updated to ${status}.`;
+
+      const notification = new NotificationModel({
+        userId: order.userId, // Assuming the order has a reference to user
+        message: notificationMessage,
+        seen: false, // Notifications are not seen initially
+      });
+
+      await notification.save(); // Save the notification to the database
+
+
+      io.emit(`notification::${order.userId}`, {text: notificationMessage, type: "order-status-update", orderId: order._id, orderStatus: status});
+
+      // Respond with success and the updated order
+      res.status(200).json({
+        message: "Order status updated successfully.",
+        order,
+        notification: notificationMessage,
+      });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      next(error);
+    }
+  },
+
+
+
+acceptOrCancelOrderController: async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId, action } = req.body;  // action could be "accept" or "cancel"
+
+    // Find the order by ID
+    const order = await OrderModel.findById(orderId);
+
+    if (!order) {
+       res.status(404).json({ message: "Order not found." });
+       return;
+    }
+
+    // Validate action (accept or cancel)
+    if (!["accept", "cancel"].includes(action)) {
+       res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
+       return;
+    }
+
+    // ✅ Update order status based on action and current order status
+    if (order.orderStatus === "custom") {
+      order.orderStatus = action === "accept" ? "custom:running" : "custom:cancelled";
+    } else {
+      order.orderStatus = action === "accept" ? "running" : "cancelled";
+    }
+
+    // Save the updated order
+    await order.save();
+
+    // Emit notification to user
+    const userId = order.userId;
+    io.emit(`user-${userId}`, {
+      type: "order-status-updated",
+      message: `Your order with ID: ${orderId} has been ${action}ed.`,
+      order,
+    });
+
+    // Send response
+    res.status(200).json({ message: `Order ${action}ed successfully.`, orderStatus: order.orderStatus });
+
+  } catch (error) {
+    console.error("Error processing order action:", error);
+    res.status(500).json({ message: "Error processing order action", error });
+  }
+},
+
+
 
   
 
@@ -767,6 +862,37 @@ export const OrderController = {
     }
   },
 
+  
+ getFilteredCustomOrders : async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // ✅ Get custom statuses from query parameter
+      let { status } = req.query;
+  
+      // Ensure status is always an array
+      let statusArray: string[] = [];
+      if (typeof status === "string") {
+        statusArray = status.split(","); // Convert CSV format to array
+      }
+  
+      // Validate input: Only allow status values that start with "custom"
+      const validStatuses = statusArray.filter(s => s.startsWith("custom"));
+  
+      // Build query: If no valid statuses are provided, fetch all "custom"-related orders
+      const query = validStatuses.length > 0 ? { orderStatus: { $in: validStatuses } } : { orderStatus: { $regex: "^custom" } };
+  
+      // ✅ Fetch orders based on query
+      const orders = await OrderModel.find(query)
+        .populate("items.productId")
+        .populate("userId", "username email phone")
+        .lean();
+  
+      res.status(200).json({ orders });
+    } catch (error) {
+      console.error("Error Fetching Custom Orders:", error);
+      next(error);
+    }
+  },
+
 
   // getOrderStatusCounts: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   //   try {
@@ -829,13 +955,14 @@ export const OrderController = {
   //     next(error);
   //   }
   // },
+ 
   getOrderStatusCounts: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Aggregate counts based on orderStatus
       const orderCounts = await OrderModel.aggregate([
         {
           $match: {
-            orderStatus: { $in: ["cancelled", "pending", "custom", "partial", "complete"] }, // Filter for relevant statuses
+            orderStatus: { $in: ["cancelled", "pending", "custom","custom:running", "partial", "complete"] }, // Filter for relevant statuses
           },
         },
         {
@@ -972,65 +1099,6 @@ export const OrderController = {
   //   }
   // },
  
-  updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const orderId = req.params.id;
-      const { status } = req.body; // Assuming 'status' is passed in the request body
-
-      // Valid status values for the order
-      const allowedStatuses = ["pending", "running", "completed", "custom", "cancelled"];
-      if (!allowedStatuses.includes(status)) {
-        res.status(400).json({ message: "Invalid order status." });
-        return;
-      }
-
-      // Retrieve the order from the database
-      const order = await OrderModel.findById(orderId);
-      if (!order) {
-        res.status(404).json({ message: "Order not found." });
-        return;
-      }
-
-      // Validate the transition based on current orderStatus
-      if (order.orderStatus === "completed" && status !== "completed") {
-        res.status(400).json({
-          message: "Order is already completed. Cannot change to another status."
-        });
-        return;
-      }
-
-      if (order.orderStatus === "cancelled" && status !== "cancelled") {
-        res.status(200).json({
-          order});
-        return;
-      }
-
-      // If the status is valid, update the order status
-      order.orderStatus = status;
-      await order.save();
-
-      // Create a notification for the user
-      const notificationMessage = `Your order with ID ${orderId} has been updated to ${status}.`;
-
-      const notification = new NotificationModel({
-        userId: order.userId, // Assuming the order has a reference to user
-        message: notificationMessage,
-        seen: false, // Notifications are not seen initially
-      });
-
-      await notification.save(); // Save the notification to the database
-
-      // Respond with success and the updated order
-      res.status(200).json({
-        message: "Order status updated successfully.",
-        order,
-        notification: notificationMessage,
-      });
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      next(error);
-    }
-  },
 
  
 
@@ -1216,4 +1284,8 @@ function formatValidationError(error: mongoose.Error.ValidationError) {
 
 
 export const { placeOrder, getAllOrders, getOrderStatus, updateOrderStatus, deleteOrder,createCustomOrderByName } = OrderController;
+
+function next(error: unknown) {
+  throw new Error("Function not implemented.");
+}
 

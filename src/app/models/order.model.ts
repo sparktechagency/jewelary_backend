@@ -138,8 +138,10 @@ interface IOrder extends Document {
       size: mongoose.Types.ObjectId;      // Reference to Size
       // thickness: mongoose.Types.ObjectId; // Reference to Thickness
     };
+
   }[];
   contactName: string;
+  // custom:string;
   contactNumber: string;
   deliverTo: string;
   totalAmount: number;
@@ -147,10 +149,49 @@ interface IOrder extends Document {
   receipts: string[];
   receiptUrls: string[];
   dueAmount: number;
+  
   paymentStatus: "Pending" | "Partial" | "Paid";
-  orderStatus: "pending" | "running" | "completed" | "custom" | "cancelled";
+  orderStatus: "pending" |"custom" | "running" | "completed" | "cancelled" | "custom:accepted" | "custom:cancelled" | "custom:running";
   createdAt: Date;
 }
+
+// const OrderSchema: Schema = new Schema(
+//   {
+//     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+//     items: [
+//       {
+//         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+//         quantity: { type: Number, required: true },
+//         variation: {
+//           color: { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true },
+//           size: { type: mongoose.Schema.Types.ObjectId, ref: "Size", required: true },
+//           // thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
+//         },
+//       },
+//     ],
+//     contactName: { type: String, required: true },
+//     custom: { type: String, required: false },
+//     contactNumber: { type: String, required: true },
+//     deliverTo: { type: String, required: true },
+//     totalAmount: { type: Number, required: true },
+//     paidAmount: { type: Number, required: true },
+//     receipts: [{ type: String }],
+//     receiptUrls: [{ type: String }],
+//     dueAmount: { type: Number, required: true },
+//     paymentStatus: { type: String, enum: ["Pending", "Partial", "Paid"], required: true },
+//     orderStatus: { 
+//       type: String, 
+//       enum: ["pending", "custom", "running", "completed", "cancelled", "custom:accepted", "custom:cancelled"], 
+//       required: true 
+//     },
+//     createdAt: { type: Date, default: Date.now },
+    
+//   },
+//   { timestamps: true }
+// );
+
+// const OrderModel = mongoose.model<IOrder>("Order", OrderSchema);
+// export default OrderModel;
 
 const OrderSchema: Schema = new Schema(
   {
@@ -162,7 +203,6 @@ const OrderSchema: Schema = new Schema(
         variation: {
           color: { type: mongoose.Schema.Types.ObjectId, ref: "Color", required: true },
           size: { type: mongoose.Schema.Types.ObjectId, ref: "Size", required: true },
-          // thickness: { type: mongoose.Schema.Types.ObjectId, ref: "Thickness", required: true },
         },
       },
     ],
@@ -175,12 +215,27 @@ const OrderSchema: Schema = new Schema(
     receiptUrls: [{ type: String }],
     dueAmount: { type: Number, required: true },
     paymentStatus: { type: String, enum: ["Pending", "Partial", "Paid"], required: true },
-    orderStatus: { type: String, enum: ["pending", "running", "completed", "custom", "cancelled"], required: true },
+
+    // ✅ Ensure `custom` is only required when status starts with `custom`
+    // custom: { 
+    //   type: String, 
+    //   required: function(this: any) { 
+    //     return this.orderStatus && this.orderStatus.startsWith("custom"); 
+    //   } 
+    // },
+
+    // ✅ Add `"running:custom"` explicitly
+    orderStatus: { 
+      type: String, 
+      enum: ["pending", "custom", "running", "completed", "cancelled", "custom:accepted", "custom:cancelled", "custom:running"], 
+      required: true 
+    },
+
     createdAt: { type: Date, default: Date.now },
-    
   },
   { timestamps: true }
 );
 
 const OrderModel = mongoose.model<IOrder>("Order", OrderSchema);
 export default OrderModel;
+

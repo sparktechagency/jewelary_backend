@@ -79,7 +79,7 @@ import { NextFunction, Request } from "express";
 // Function to create storage dynamically based on the folder type
 const createStorage = (folder: string) => multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, `../../../uploads${folder}`);
+    const uploadDir = path.join(__dirname, `../../../uploads/${folder}`);
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });  // Create folder if it doesn't exist
     }
@@ -90,7 +90,7 @@ const createStorage = (folder: string) => multer.diskStorage({
     let fileIndex = 1;
 
     // Get existing files to determine the next index
-    const uploadDir = path.join(__dirname, `../../../uploads${folderName}`);
+    const uploadDir = path.join(__dirname, `../../../uploads/${folderName}`);
     if (fs.existsSync(uploadDir)) {
       const existingFiles = fs.readdirSync(uploadDir);
       const imageFiles = existingFiles.filter(file =>
@@ -158,12 +158,16 @@ export const uploadProduct = multer({
   storage: createStorage("products"),
   limits: { fileSize: 5 * 1024 * 1024, files: 10 },
   fileFilter
-}).any();
+}).fields([
+  { name: "fileUrls", maxCount: 10 }
+]);
+
 export const uploadCategory = multer({
   storage: createStorage("categories"),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
   fileFilter
-}).single("image"); // ✅ Must match Postman form-data key
+}).fields([{ name: "image", maxCount: 10 }]); // ✅ Must match Postman form-data key
+
 export const uploadDebug = (req: Request, res: Response, next: NextFunction) => {
   console.log("🔍 Incoming Request Fields:", req.body);
   console.log("🔍 Incoming Files:", req.files);
