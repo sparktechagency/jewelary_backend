@@ -20,26 +20,45 @@ export const initSocket = (server: any) => {
       console.log("Received order status update:", data);
 
     // Handle sending messages with productId
+    // socket.on("sendMessage", async (data) => {
+    //   console.log("Received Socket Message:", data); // ✅ Debugging log
+
+    //   const { receiverId, content, senderType, productId,messageSource } = data;
+
+    //   if (!receiverId || !content || !senderType || !productId) {
+    //     socket.emit("error", { message: "Missing required fields" });
+    //     return;
+    //   }
+
+    //   try {
+    //     const message = await MessageService.sendMessage(receiverId, content, senderType, productId,messageSource);
+
+    //     // Emit message to the receiver's room
+    //     io.to(receiverId).emit("receiveMessage", message);
+
+    //     // Confirm message sent to sender
+    //     socket.emit("messageSent", message);
+    //   } catch (error) {
+    //     console.error("Socket Message Error:", error); // ✅ Debugging log
+    //     socket.emit("error", { message: "Failed to send message" });
+    //   }
+    // });
+
     socket.on("sendMessage", async (data) => {
-      console.log("Received Socket Message:", data); // ✅ Debugging log
+      const { receiverId, content, senderType, productId, messageSource } = data;
 
-      const { receiverId, content, senderType, productId,messageSource } = data;
-
-      if (!receiverId || !content || !senderType || !productId) {
+      if (!receiverId || !content || !senderType) {
         socket.emit("error", { message: "Missing required fields" });
         return;
       }
 
+      const finalProductId = (messageSource === 'productPage' && senderType === 'user') ? productId : null;
+
       try {
-        const message = await MessageService.sendMessage(receiverId, content, senderType, productId,messageSource);
-
-        // Emit message to the receiver's room
+        const message = await MessageService.sendMessage(receiverId, content, senderType, finalProductId, messageSource);
         io.to(receiverId).emit("receiveMessage", message);
-
-        // Confirm message sent to sender
         socket.emit("messageSent", message);
       } catch (error) {
-        console.error("Socket Message Error:", error); // ✅ Debugging log
         socket.emit("error", { message: "Failed to send message" });
       }
     });
@@ -58,6 +77,14 @@ export const initSocket = (server: any) => {
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
+    });
+  });
+
+  io.on("connection", (socket) => {
+    console.log("Admin connected:", socket.id);
+  
+    socket.on("disconnect", () => {
+      console.log("Admin disconnected:", socket.id);
     });
   });
 

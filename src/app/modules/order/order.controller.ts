@@ -169,392 +169,409 @@ export const OrderController = {
   
 
  
-  // createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+//  createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//     try {
+//       const { userName, products, paymentType } = req.body;
+//       let paidAmt: number = Number(req.body.paidAmount) || 0;
+  
+//       // Sanitize inputs
+//       const sanitizedUserName = userName ? String(userName).trim() : '';
+  
+//       // Validate required inputs
+//       if (!sanitizedUserName) {
+//          res.status(400).json({ message: "User name is required." });
+//          return
+//       }
+  
+//       if (!Array.isArray(products) || products.length === 0) {
+//          res.status(400).json({ message: "Product list is required and must be a non-empty array." });
+//          return
+//       }
+  
+//       if (!['full', 'partial', 'cod'].includes(paymentType)) {
+//          res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
+//          return
+//       }
+  
+//       if (isNaN(paidAmt) || paidAmt < 0) {
+//          res.status(400).json({ message: "Paid amount must be a non-negative number." });
+//          return
+//       }
+  
+//       // Find user by name
+//       const user = await UserModel.findOne({ username: sanitizedUserName });
+//       if (!user) {
+//          res.status(404).json({ message: "User not found." });
+//          return
+//       }
+  
+//       const userId = user._id;
+  
+//       // Validate products and calculate total amount
+//       const productsValidation = await validateProducts(products);
+//       if (!productsValidation.isValid) {
+//          res.status(400).json({ message: productsValidation.message, details: productsValidation.data });
+//          return
+//       }
+  
+//       const { validatedItems, totalAmount } = productsValidation.data;
+  
+//       // Calculate payment details
+//       const paymentDetails = calculatePaymentDetails(totalAmount, paidAmt, paymentType);
+  
+//       // Fallback values for contact details if not provided
+//       const contactName = req.body.contactName || user.username || sanitizedUserName;
+//       const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
+//       const deliverTo = req.body.deliverTo || "Default Address";
+  
+//       // Create the custom order with properly structured items
+//       const newOrder = new OrderModel({
+//         userId,
+//         items: validatedItems,
+//         contactName,
+//         contactNumber,
+//         deliverTo,
+//         totalAmount,
+//         paidAmount: paymentDetails.paidAmount,
+//         dueAmount: paymentDetails.dueAmount,
+//         paymentType,
+//         paymentStatus: paymentDetails.paymentStatus,
+//         orderStatus: "custom",  // Set as custom order
+//       });
+  
+//       await newOrder.save();
+  
+//       // Create a notification for the user about the custom order
+//       const notification = new NotificationModel({
+//         userId: userId,
+//         message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
+//         Order:newOrder.id,
+//         type: 'new-custom-order',
+//         seen: false,
+//       });
+//       await notification.save();
+  
+  
+
+//       io.emit(`notification::${newOrder.userId}`, {text: notification, type: "custom order created please accept", orderId: newOrder._id, orderStatus: "custom"});
+  
+//       // Return the successful response with order details
+//       res.status(201).json({
+//         message: "Custom order created successfully.",
+//         orderId: newOrder._id,
+//         totalAmount,
+//         paidAmount: paymentDetails.paidAmount,
+//         dueAmount: paymentDetails.dueAmount,
+//         user: {
+//           id: user._id,
+//           username: user.username,
+//           email: user.email,
+//           phoneNumber: user.phoneNumber
+//         },
+//         orderDetails: newOrder,
+//       });
+  
+//     } catch (error) {
+//       console.error("Error creating custom order:", error);
+//       const errorMessage = error instanceof Error ? error.message : "Unknown error";
+//       res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
+//     }
+//   },
+
+  // updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   //   try {
-  //     const { userName, products, paymentType } = req.body;
-  //     let paidAmt: number = Number(req.body.paidAmount) || 0;
-  
-  //     // Sanitize inputs
-  //     const sanitizedUserName = userName ? String(userName).trim() : '';
-  
-  //     // Validate required inputs
-  //     if (!sanitizedUserName) {
-  //       res.status(400).json({ message: "User name is required." });
-  //       return;
-  //     }
-  
-  //     if (!Array.isArray(products) || products.length === 0) {
-  //       res.status(400).json({ message: "Product list is required and must be a non-empty array." });
-  //       return;
-  //     }
-  
-  //     if (!['full', 'partial', 'cod'].includes(paymentType)) {
-  //       res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
-  //       return;
-  //     }
-  
-  //     if (isNaN(paidAmt) || paidAmt < 0) {
-  //       res.status(400).json({ message: "Paid amount must be a non-negative number." });
-  //       return;
-  //     }
-  
-  //     // Find user by name
-  //     const user = await UserModel.findOne({ username: sanitizedUserName });
-  //     if (!user) {
-  //       res.status(404).json({ message: "User not found." });
-  //       return;
-  //     }
-  
-  //     const userId = user._id;
-  
-  //     // Validate products and calculate total amount
-  //     // const session = await mongoose.startSession();
-  //     // session.startTransaction();
-  //     const productsValidation = await validateProducts(products);
-  //   if (!productsValidation.isValid) {
-  //     res.status(400).json({
-  //       message: productsValidation.message,
-  //       details: productsValidation.data
-  //     });
-  //     return;
-  //   }
-  
-  //     const { validatedItems, totalAmount } = productsValidation.data;
-  
-  //     // Calculate payment details
-  //     const paymentDetails = calculatePaymentDetails(totalAmount, paidAmt, paymentType);
-  
-  //     // Fallback values for contact details if not provided
-  //     const contactName = req.body.contactName || user.username || sanitizedUserName;
-  //     const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
-  //     const deliverTo = req.body.deliverTo || "Default Address";
-  
-  //     // Create the order with properly structured items
-  //     const newOrder = new OrderModel({
-  //       userId,
-  //       items: validatedItems,
-  //       contactName,
-  //       contactNumber,
-  //       deliverTo,
-  //       totalAmount,
-  //       paidAmount: paymentDetails.paidAmount,
-  //       dueAmount: paymentDetails.dueAmount,
-  //       paymentType,
-  //       paymentStatus: paymentDetails.paymentStatus,
-  //       receiptUrls: [],
-  //       receipts: [],
-  //       orderStatus: "custom", // Set as custom order
-  //     });
-  
-  //     await newOrder.save();
-  
-  //     // Populate order details for notification
-  //     const populatedOrder = await OrderModel.findById(newOrder._id)
-  //       .populate('userId', 'username email phoneNumber')
-  //       .populate({
-  //         path: 'items.productId',
-  //         select: 'name images'
-  //       })
-  //       .populate({
-  //         path: 'items.variation.color',
-  //         select: 'name code'
-  //       })
-  //       .populate({
-  //         path: 'items.variation.size',
-  //         select: 'name value'
-  //       });
+  //     const orderId = req.params.id;
+  //     const { status } = req.body; // Assuming 'status' is passed in the request body
 
-  //     // Emit notifications
-  //     io.emit(`user-${userId}`, {
-  //       type: 'new-custom-order',
-  //       message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
-  //       order: populatedOrder
-  //   });
-  //     // Send successful response
-  //     res.status(201).json({
-  //       message: "Custom order created successfully.",
-  //       orderId: newOrder._id,
-  //       totalAmount,
-  //       paidAmount: paymentDetails.paidAmount,
-  //       dueAmount: paymentDetails.dueAmount,
-  //       user: {
-  //         id: user._id,
-  //         username: user.username,
-  //         email: user.email,
-  //         phoneNumber: user.phoneNumber
-  //       },
-  //       orderDetails: newOrder
-  //     });
-  
-  //   } catch (error) {
-  //     // Handle error
-  //     console.error("Error creating custom order:", error);
-  //     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-  //     res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
-  //   }
-  // },
-  
+  //     // Valid status values for the order
+  //     const allowedStatuses = ["pending", "running", "completed", "custom", "custom:accepted", "custom:cancelled", "cancelled"];
+  //     if (!allowedStatuses.includes(status)) {
+  //       res.status(400).json({ message: "Invalid order status." });
+  //       return;
+  //     }
 
-  
-  
-
-  // acceptOrCancelOrderController: async (req: Request, res: Response): Promise<void> => {
-  //   try {
-  //     const { orderId, action } = req.body;
-  
-  //     // Find the order by ID
+  //     // Retrieve the order from the database
   //     const order = await OrderModel.findById(orderId);
   //     if (!order) {
-  //        res.status(404).json({ message: "Order not found." });
-  //        return
+  //       res.status(404).json({ message: "Order not found." });
+  //       return;
   //     }
-  
-  //     // Validate action
-  //     if (action !== "accept" && action !== "cancel") {
-  //        res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
-  //        return
-  //     }
-  
-  //     // Update order status
-  //     if (action === "accept") {
-  //       order.orderStatus = "running";
-  //     } else if (action === "cancel") {
-  //       order.orderStatus = "cancelled";
-  //     }
-  
-  //     await order.save();
-  
-  //     // Emit notification to the user (assuming the user is connected)
-  //     const socketId = userSocketMap[order.userId.toString()];
-  //     if (socketId) {
-  //       io.to(socketId).emit("order-status-updated", {
-  //         message: `Your order with ID: ${orderId} has been ${action}ed.`,
-  //         order
+
+  //     // Validate the transition based on current orderStatus
+  //     if (order.orderStatus === "completed" && status !== "completed") {
+  //       res.status(400).json({
+  //         message: "Order is already completed. Cannot change to another status."
   //       });
+  //       return;
   //     }
-  
-  //     res.status(200).json({ message: `Order ${action}ed successfully`, orderStatus: order.orderStatus });
-  
+
+  //     if (order.orderStatus === "cancelled" && status !== "cancelled") {
+  //       res.status(200).json({
+  //         order});
+  //       return;
+  //     }
+
+  //     // If the status is valid, update the order status
+  //     order.orderStatus = status;
+  //     await order.save();
+
+  //     // Create a notification for the user
+  //     const notificationMessage = `Hi ${order.userId.username} Your Order has been updated to ${status}.`;
+  //     const OrderStatus = status;
+  //     const notification = new NotificationModel({
+  //       userId: order.userId, // Assuming the order has a reference to user
+  //       message: notificationMessage,
+  //       OrderStatus,
+  //       seen: false, // Notifications are not seen initially
+  //     });
+
+  //     await notification.save(); // Save the notification to the database
+
+
+  //     io.emit(`notification::${order.userId}`, {text: notificationMessage, type: "order-status-update", orderId: order._id, orderStatus: status});
+
+  //     // Respond with success and the updated order
+  //     res.status(200).json({
+  //       message: "Order status updated successfully.",
+  //       OrderStatus,
+  //       notification: notificationMessage,
+  //     });
   //   } catch (error) {
-  //     console.error("Error Fetching Custom Acceptence Orders:", error);
+  //     console.error("Error updating order status:", error);
   //     next(error);
   //   }
   // },
- 
- createCustomOrderByName: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+ createCustomOrderByName :async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userName, products, paymentType } = req.body;
-      let paidAmt: number = Number(req.body.paidAmount) || 0;
+      const { userName, products, paymentType, paidAmount, contactName, contactNumber } = req.body;
   
-      // Sanitize inputs
-      const sanitizedUserName = userName ? String(userName).trim() : '';
+      const sanitizedUserName = userName?.toString().trim();
+      const paidAmt = Number(paidAmount) || 0;
   
-      // Validate required inputs
       if (!sanitizedUserName) {
-         res.status(400).json({ message: "User name is required." });
-         return
+        res.status(400).json({ message: 'Username is required.' });
+        return;
+      }
+  
+      const user = await UserModel.findOne({ username: sanitizedUserName });
+      if (!user) {
+        res.status(404).json({ message: 'User not found.' });
+        return;
       }
   
       if (!Array.isArray(products) || products.length === 0) {
-         res.status(400).json({ message: "Product list is required and must be a non-empty array." });
-         return
+        res.status(400).json({ message: 'Products must be provided.' });
+        return;
       }
   
-      if (!['full', 'partial', 'cod'].includes(paymentType)) {
-         res.status(400).json({ message: "Invalid payment type. Must be 'full', 'partial', or 'cod'." });
-         return
-      }
+      const totalAmount = products.reduce((sum, product) => sum + Number(product.price || 0), 0);
   
-      if (isNaN(paidAmt) || paidAmt < 0) {
-         res.status(400).json({ message: "Paid amount must be a non-negative number." });
-         return
-      }
-  
-      // Find user by name
-      const user = await UserModel.findOne({ username: sanitizedUserName });
-      if (!user) {
-         res.status(404).json({ message: "User not found." });
-         return
-      }
-  
-      const userId = user._id;
-  
-      // Validate products and calculate total amount
-      const productsValidation = await validateProducts(products);
-      if (!productsValidation.isValid) {
-         res.status(400).json({ message: productsValidation.message, details: productsValidation.data });
-         return
-      }
-  
-      const { validatedItems, totalAmount } = productsValidation.data;
-  
-      // Calculate payment details
       const paymentDetails = calculatePaymentDetails(totalAmount, paidAmt, paymentType);
   
-      // Fallback values for contact details if not provided
-      const contactName = req.body.contactName || user.username || sanitizedUserName;
-      const contactNumber = req.body.contactNumber || user.phoneNumber || "0000000000";
-      const deliverTo = req.body.deliverTo || "Default Address";
-  
-      // Create the custom order with properly structured items
       const newOrder = new OrderModel({
-        userId,
-        items: validatedItems,
-        contactName,
-        contactNumber,
-        deliverTo,
+        userId: user._id,
+        products,
+        contactName: contactName || user.username,
+        contactNumber: contactNumber || user.phoneNumber,
+        deliverTo:  req.body.deliverTo || "Default Address",
         totalAmount,
         paidAmount: paymentDetails.paidAmount,
         dueAmount: paymentDetails.dueAmount,
         paymentType,
         paymentStatus: paymentDetails.paymentStatus,
-        orderStatus: "custom",  // Set as custom order
+        orderStatus: 'custom',
       });
   
       await newOrder.save();
   
-      // Create a notification for the user about the custom order
       const notification = new NotificationModel({
-        userId: userId,
         message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
-        type: 'new-custom-order',
+        userId: user._id,
+        text: 'A custom order was created for you.',
+        orderId: newOrder._id,
+        orderStatus: 'custom',
+        type: 'custom-order-created',
         seen: false,
       });
+  
       await notification.save();
+      const notificationd = await NotificationModel.findById(notification._id).lean();
   
-  
-
-      io.emit(`notification::${newOrder.userId}`, {text: notification, type: "custom order created please accept", orderId: newOrder._id, orderStatus: "custom"});
-  
-      // Return the successful response with order details
-      res.status(201).json({
-        message: "Custom order created successfully.",
+      io.emit(`notification::${user._id}`, {
+        message: `Admin has created a custom order for you. Order ID: ${newOrder._id}. Please proceed to payment.`,
+        text: notification.message,
+        type: 'custom-order-created',
         orderId: newOrder._id,
-        totalAmount,
-        paidAmount: paymentDetails.paidAmount,
-        dueAmount: paymentDetails.dueAmount,
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          phoneNumber: user.phoneNumber
-        },
-        orderDetails: newOrder,
+        orderStatus: 'custom',
       });
+  
+      res.status(200).json({
+        success: true,
+        message: 'Custom order created successfully.',
+        orderDetails: newOrder, 
+        notificationd,
+      });
+     
   
     } catch (error) {
-      console.error("Error creating custom order:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      res.status(500).json({ message: "Failed to create custom order", error: errorMessage });
+      console.error('Error creating custom order:', error);
+      res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'Internal Server Error' });
     }
   },
+  
 
-  updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+ updateOrderStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const orderId = req.params.id;
-      const { status } = req.body; // Assuming 'status' is passed in the request body
-
-      // Valid status values for the order
+      const { status } = req.body;
+  
       const allowedStatuses = ["pending", "running", "completed", "custom", "custom:accepted", "custom:cancelled", "cancelled"];
       if (!allowedStatuses.includes(status)) {
-        res.status(400).json({ message: "Invalid order status." });
-        return;
+         res.status(400).json({ message: "Invalid order status." });
+         return
       }
-
-      // Retrieve the order from the database
+  
       const order = await OrderModel.findById(orderId);
       if (!order) {
-        res.status(404).json({ message: "Order not found." });
-        return;
+         res.status(404).json({ message: "Order not found." });
+         return
       }
-
-      // Validate the transition based on current orderStatus
-      if (order.orderStatus === "completed" && status !== "completed") {
-        res.status(400).json({
-          message: "Order is already completed. Cannot change to another status."
-        });
-        return;
-      }
-
-      if (order.orderStatus === "cancelled" && status !== "cancelled") {
-        res.status(200).json({
-          order});
-        return;
-      }
-
-      // If the status is valid, update the order status
+  
       order.orderStatus = status;
       await order.save();
-
-      // Create a notification for the user
-      const notificationMessage = `Your order with ID ${orderId} has been updated to ${status}.`;
-
+  
+      // ✅ Ensure `orderStatus` is stored in the notification
+      const notificationMessage = `Your Order has been updated to ${status}.`;
       const notification = new NotificationModel({
-        userId: order.userId, // Assuming the order has a reference to user
+        userId: order.userId,
+        orderId: order._id,
         message: notificationMessage,
-        seen: false, // Notifications are not seen initially
+        orderStatus: status, // ✅ Ensure `orderStatus` is stored
+        seen: false,
       });
-
-      await notification.save(); // Save the notification to the database
-
-
-      io.emit(`notification::${order.userId}`, {text: notificationMessage, type: "order-status-update", orderId: order._id, orderStatus: status});
-
-      // Respond with success and the updated order
+  
+      await notification.save();
+  
+      io.emit(`notification::${order.userId}`, {
+        text: notificationMessage,
+        type: "order-status-update",
+        orderId: order._id,
+        orderStatus: status,
+      });
+  
       res.status(200).json({
         message: "Order status updated successfully.",
-        order,
+        orderStatus: status,
         notification: notificationMessage,
       });
     } catch (error) {
       console.error("Error updating order status:", error);
       next(error);
     }
-  },
+  },  
+  
 
 
+// acceptOrCancelOrderController: async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { orderId, action } = req.body;  // action could be "accept" or "cancel"
+
+//     // Find the order by ID
+//     const order = await OrderModel.findById(orderId);
+
+//     if (!order) {
+//        res.status(404).json({ message: "Order not found." });
+//        return;
+//     }
+
+//     // Validate action (accept or cancel)
+//     if (!["accept", "cancel"].includes(action)) {
+//        res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
+//        return;
+//     }
+
+//     // ✅ Update order status based on action and current order status
+//     if (order.orderStatus === "custom") {
+//       order.orderStatus = action === "accept" ? "custom:running" : "custom:cancelled";
+//     } else {
+//       order.orderStatus = action === "accept" ? "running" : "cancelled";
+//     }
+
+//     // Save the updated order
+//     await order.save();
+
+//     // Emit notification to user
+//     const userId = order.userId;
+//     io.emit(`user-${userId}`, {
+//       type: "order-status-updated",
+//       message: `Your order with ID: ${orderId} has been ${action}ed.`,
+//       order,
+//     });
+
+//     // Send response
+//     res.status(200).json({ message: `Order ${action}ed successfully.`, orderStatus: order.orderStatus });
+
+//   } catch (error) {
+//     console.error("Error processing order action:", error);
+//     res.status(500).json({ message: "Error processing order action", error });
+//   }
+// },
 
 acceptOrCancelOrderController: async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId, action } = req.body;  // action could be "accept" or "cancel"
+    const { orderId, action } = req.body; // action: "accept" or "cancel"
 
     // Find the order by ID
     const order = await OrderModel.findById(orderId);
-
     if (!order) {
-       res.status(404).json({ message: "Order not found." });
-       return;
+      res.status(404).json({ message: "Order not found." });
+      return;
     }
 
-    // Validate action (accept or cancel)
+    // Validate action
     if (!["accept", "cancel"].includes(action)) {
-       res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
-       return;
+      res.status(400).json({ message: "Invalid action. Use 'accept' or 'cancel'." });
+      return;
     }
 
-    // ✅ Update order status based on action and current order status
+    // ✅ Update order status
     if (order.orderStatus === "custom") {
       order.orderStatus = action === "accept" ? "custom:running" : "custom:cancelled";
     } else {
       order.orderStatus = action === "accept" ? "running" : "cancelled";
     }
 
-    // Save the updated order
     await order.save();
 
-    // Emit notification to user
-    const userId = order.userId;
-    io.emit(`user-${userId}`, {
-      type: "order-status-updated",
-      message: `Your order with ID: ${orderId} has been ${action}ed.`,
-      order,
+    // ✅ Create an admin notification
+    const adminNotificationData: any = {
+      message: `User has ${action}ed Contact: ${order.contactName}.`,
+      Status: order.orderStatus,
+      type: `order-${action}`,
+      seen: false,
+    };
+
+    console.log("📌 Creating Admin Notification:", adminNotificationData);
+
+    const adminNotification = new NotificationModel(adminNotificationData);
+    await adminNotification.save();
+
+    console.log("✅ Admin Notification Saved:", adminNotification);
+
+    // ✅ Emit WebSocket notification
+    io.emit("admin-notification", {
+      text: `User has ${action}ed order ID: ${orderId}.`,
+      type: `order-${action}`,
+      orderId: order._id,
+      orderStatus: order.orderStatus,
     });
 
-    // Send response
     res.status(200).json({ message: `Order ${action}ed successfully.`, orderStatus: order.orderStatus });
 
   } catch (error) {
-    console.error("Error processing order action:", error);
+    console.error("❌ Error processing order action:", error);
     res.status(500).json({ message: "Error processing order action", error });
   }
 },

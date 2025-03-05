@@ -4,18 +4,24 @@ export interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
   receiver: mongoose.Types.ObjectId;
   content: string;
+  productId?: mongoose.Types.ObjectId; // ✅ Make productId optional
+  messageSource: string;
   senderType: 'user' | 'admin';
   isRead: boolean;
+  files?: string[]; // ✅ Add files field
   createdAt: Date;
 }
 
 const MessageSchema = new Schema<IMessage>(
   {
-    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+    receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     content: { type: String, required: true },
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: false }, // ✅ Make productId optional
+    messageSource: { type: String, required:false }, // ✅ Ensure this field exists
     senderType: { type: String, enum: ['user', 'admin'], required: true }, // ✅ Ensure it's required
     isRead: { type: Boolean, default: true },
+    files: { type: [String], default: [] }, // ✅ Add files field
   },
   { timestamps: true }
 );

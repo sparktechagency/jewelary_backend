@@ -41,7 +41,7 @@ router.get(
 
 
 router.put(
-  "/edit-image-name/:filename", 
+  "/edit-image-name/:folder/:filename", 
     isAuthenticated,
     renameImageController
 

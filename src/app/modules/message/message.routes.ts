@@ -1,19 +1,21 @@
 import express from 'express';
 import { MessageController } from './message.controller';
-import { isAuthenticated } from '../auth/auth.middleware';
+import { isAdmin, isAuthenticated, verifyToken } from '../auth/auth.middleware';
+import { uploadImages, uploadMessageFiles } from '../multer/multer.conf';
 
 const router = express.Router();
 
 // Route to send message (product page or message box)
-router.post('/send', isAuthenticated, MessageController.sendMessage);
+router.post('/send', isAuthenticated, uploadMessageFiles, MessageController.sendMessage);
 
 // Route to get conversation between user and admin or user and user
 router.get('/conversation/:partnerId', isAuthenticated, MessageController.getConversation);
 
 // Route to mark message as read
-router.patch('/message/read/:messageId', isAuthenticated, MessageController.markAsRead);
+router.patch('/read/:messageId', isAuthenticated, MessageController.markAsRead);
+router.post('/admin/send-message', verifyToken,uploadMessageFiles, MessageController.sendAdminMessage);
+router.get('/all-users-messages', isAuthenticated, MessageController.getAllUserMessages);
+// router.get('/all-admin-messages', isAuthenticated, MessageController.getAllAdminMessages);
 
-// Admin Route to get all messages (Admin can see all messages)
-router.get('/admin/:userId', isAuthenticated, MessageController.getAllMessages);
 
 export default router;

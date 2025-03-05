@@ -58,7 +58,7 @@ app.post(
 );
 
 
-const PORT = process.env.PORT || "5000";
+const SocketPort = process.env.SocketPort || "5000";
 
 // ✅ Create HTTP server
 const server = createServer(app);
@@ -78,8 +78,9 @@ io.on("connection", (socket) => {
 connectDB();
 
 // ✅ Start the server
-server.listen(PORT, () => {
-  console.log(`🚀 Server & Socket.io running on http://10.0.70.208:${PORT}`);
+server.listen(SocketPort, () => {
+  // console.log(`🚀 Server & Socket.io running on http://10.0.70.208:${PORT}`);
+  console.log(`🚀 Server & Socket.io running on http://10.0.70.208:${SocketPort}`);
 });
 
 // Export both app and io

@@ -262,6 +262,70 @@ export const AdminController = {
       });
     }
   },
+  // Update admin profile
+  updateProfile: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const adminId = req.user?.id;
+      if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
+        res.status(400).json({ success: false, message: 'Invalid admin ID' });
+        return;
+      }
+  
+      const admin = await AdminModel.findById(adminId);
+      if (!admin) {
+        res.status(404).json({ success: false, message: 'Admin not found.' });
+        return;
+      }
+  
+      const { username, email, phone } = req.body;
+  
+      // Check unique email
+      if (email && email !== admin.email) {
+        const emailExists = await AdminModel.findOne({ email });
+        if (emailExists) {
+          res.status(400).json({ success: false, message: 'Email already in use.' });
+          return;
+        }
+      }
+  
+      // Check unique username
+      if (username && username !== admin.username) {
+        const usernameExists = await AdminModel.findOne({ username });
+        if (usernameExists) {
+          res.status(400).json({ success: false, message: 'Username already in use.' });
+          return;
+        }
+      }
+  
+      const imageUrl = req.file ? req.file.path : admin.image;
+  
+      const updatedAdmin = await AdminModel.findByIdAndUpdate(
+        adminId,
+        {
+          $set: {
+            username: username || admin.username,
+            email: email || admin.email,
+            phone: phone || admin.phone,
+            image: imageUrl,
+          },
+        },
+        { new: true }
+      );
+  
+      res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully.',
+        data: updatedAdmin,
+      });
+  
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: (error as Error).message || 'Server error.',
+      });
+    }
+  },
+  
 
   // Get admin profile
   getProfile: async (req: Request, res: Response, next: NextFunction): Promise<void> => {

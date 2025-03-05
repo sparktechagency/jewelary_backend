@@ -42,7 +42,7 @@ export const CategoryController = {
         }
   
         // 🔍 Check if category exists before proceeding
-        const result = await CategoryService.create({ name, image });
+        const result = await CategoryService.create({ name, image , active: true });
   
         if (result.error) {
           return res.status(409).json(result); // ✅ Return conflict status
@@ -210,6 +210,41 @@ export const CategoryController = {
       });
     },
     
+    //updatestatus category active status
+  
+    updatestatus: async (req: Request, res: Response) => {
+      try {  
+        const category = await CategoryService.update(req.params.id, req.body);
+        if (!category) {
+          res.status(404).json({ message: "Category active not found" });
+          return;
+        }
+        res.status(200).json(category);
+      } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+      }
+    },
+
+
+    //get active category
+    getActiveCategories: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        const categories = await CategoryModel.find({ active: true });
+        res.status(200).json(categories);
+      } catch (error: any) {
+        res.status(500).json({ message: error.message });
+      }
+    },
+
+    //get inactive category
+    getInactiveCategories: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        const categories = await CategoryModel.find({ active: false });
+        res.status(200).json(categories);
+      } catch (error: any) {
+        res.status(500).json({ message: error.message });
+      }
+    },
   
 
   delete: async (req: Request, res: Response) => {

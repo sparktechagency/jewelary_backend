@@ -3,7 +3,7 @@ import ProductModel from "../../models/Product";
 
 export const CategoryService = {
 
-    create: async (data: { name: string; image: string }) => {
+    create: async (data: { name: string; image: string; active: boolean }) => {
       try {
         // 🔍 Check if category already exists BEFORE saving the image
         const existingCategory = await CategoryModel.findOne({ name: data.name });
@@ -12,7 +12,7 @@ export const CategoryService = {
         }
   
         // ✅ Save new category
-        const category = new CategoryModel({ name: data.name, image: data.image });
+        const category = new CategoryModel({ name: data.name, image: data.image , active: data.active });
         await category.save();
         return { message: "Category created successfully.", category };
       } catch (error) {

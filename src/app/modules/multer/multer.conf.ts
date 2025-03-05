@@ -77,51 +77,85 @@ import fs from "fs";
 import { NextFunction, Request } from "express";
 
 // Function to create storage dynamically based on the folder type
+// const createStorage = (folder: string) => multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = path.join(__dirname, `../../../uploads/${folder}`);
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });  // Create folder if it doesn't exist
+//     }
+//     cb(null, uploadDir);  // Save to the specified folder
+//   },
+//   filename: (req, file, cb) => {
+//     const folderName = req.params.folder || folder;
+//     let fileIndex = 1;
+
+//     // Get existing files to determine the next index
+//     const uploadDir = path.join(__dirname, `../../../uploads/${folderName}`);
+//     if (fs.existsSync(uploadDir)) {
+//       const existingFiles = fs.readdirSync(uploadDir);
+//       const imageFiles = existingFiles.filter(file =>
+//         /^image-\d+\.(jpg|jpeg|png|gif)$/i.test(file)
+//       );
+
+//       if (imageFiles.length > 0) {
+//         // Extract existing indices and find the highest one
+//         const indices = imageFiles.map(file => {
+//           const match = file.match(/^image-(\d+)\./);
+//           return match ? parseInt(match[1], 10) : 0;
+//         });
+//         fileIndex = Math.max(...indices) + 1;  // Increment to the next available index
+//       }
+//     }
+
+//     // Generate the filename using the sequential index
+//     const fileExtension = path.extname(file.originalname);
+//     cb(null, `${fileIndex}${fileExtension}`);
+//   }
+// });
+
 const createStorage = (folder: string) => multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, `../../../uploads/${folder}`);
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });  // Create folder if it doesn't exist
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
-    cb(null, uploadDir);  // Save to the specified folder
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const folderName = req.params.folder || folder;
-    let fileIndex = 1;
-
-    // Get existing files to determine the next index
-    const uploadDir = path.join(__dirname, `../../../uploads/${folderName}`);
-    if (fs.existsSync(uploadDir)) {
-      const existingFiles = fs.readdirSync(uploadDir);
-      const imageFiles = existingFiles.filter(file =>
-        /^image-\d+\.(jpg|jpeg|png|gif)$/i.test(file)
-      );
-
-      if (imageFiles.length > 0) {
-        // Extract existing indices and find the highest one
-        const indices = imageFiles.map(file => {
-          const match = file.match(/^image-(\d+)\./);
-          return match ? parseInt(match[1], 10) : 0;
-        });
-        fileIndex = Math.max(...indices) + 1;  // Increment to the next available index
-      }
-    }
-
-    // Generate the filename using the sequential index
     const fileExtension = path.extname(file.originalname);
-    cb(null, `image-${fileIndex}${fileExtension}`);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
+    cb(null, uniqueName);
   }
 });
 
-// File filter for allowed file types
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = ["image/jpeg", "image/png", "image/gif"];
+  const allowedMimeTypes = [
+    "image/jpeg", "image/png", "image/gif", // Images
+    "application/pdf", // PDFs
+    "audio/mpeg", "audio/wav", "audio/mp3" // Audio messages
+  ];
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only JPEG, PNG, and GIF are allowed."));
+    cb(new Error("Invalid file type. Only images, PDFs, and audio files are allowed."));
   }
 };
+
+export const uploadMessageFiles = multer({
+  storage: createStorage("messages"),
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB per file
+  fileFilter
+}).any(); // Accept multiple files
+
+// File filter for allowed file types
+// const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+//   const allowedMimeTypes = ["image/jpeg", "image/png", "image/gif","application/pdf" ];
+//   if (allowedMimeTypes.includes(file.mimetype)) {
+//     cb(null, true);
+//   } else {
+//     cb(new Error("Invalid file type. Only JPEG, PNG,GIF and pdf  are allowed."));
+//   }
+// };
 
 // Multer configuration for accepting multiple files
 export const uploadAdvertisement = multer({

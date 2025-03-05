@@ -102,6 +102,8 @@
 // });
 
 // export const AdminModel = mongoose.model<IAdmin>('Admin', AdminSchema);
+
+
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
 
@@ -110,6 +112,7 @@ export interface IAdmin extends Document {
   username: string;
   email: string;
   phone?: string;  // Make phone optional if you don't need it
+  image?: string;  // Add image field
   password: string;
   isActive: boolean;
   role: { type: String, default: "admin" };
@@ -118,6 +121,7 @@ export interface IAdmin extends Document {
 }
 
 const AdminSchema = new Schema<IAdmin>({
+  id: Types.ObjectId,
   username: {
     type: String,
     required: true,
@@ -133,6 +137,9 @@ const AdminSchema = new Schema<IAdmin>({
   phone: {
     type: String,
     required: false,  // Make phone optional
+  },
+  image: {
+    type: String,
   },
   password: {
     type: String,

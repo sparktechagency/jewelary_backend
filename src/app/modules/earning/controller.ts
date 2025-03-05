@@ -4,51 +4,52 @@ import OrderModel from "../../models/order.model";
 import UserModel from "../../models/user.model";  // Import UserModel for calculating total users
 import moment from "moment";
 import { PipelineStage } from "mongoose";
+import ManualOrderModel from "../../models/manualOrderModel";
 
 const EarningsController = {
-  getEarningsDashboard: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const startOfMonth = moment().startOf("month").toDate();
-      const startOfYear = moment().startOf("year").toDate();
-      const startOfToday = moment().startOf("day").toDate();
+  // getEarningsDashboard: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const startOfMonth = moment().startOf("month").toDate();
+  //     const startOfYear = moment().startOf("year").toDate();
+  //     const startOfToday = moment().startOf("day").toDate();
 
-      const [
-        totalEarningsAgg,
-        monthlyEarningsAgg,
-        yearlyEarningsAgg,
-        todayEarningsAgg,
-        pendingPaymentsAgg,
-        manualPaymentsAgg,
-        totalSalesAgg,
-        totalProfitAgg,
-        totalUsersAgg
-      ] = await Promise.all([
-        PaymentModel.aggregate([{ $match: { status: "succeeded" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-        PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-        PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfYear } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-        PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfToday } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-        OrderModel.aggregate([{ $match: { paymentStatus: { $ne: "Paid" } } }, { $group: { _id: null, total: { $sum: "$dueAmount" } } }]),
-        PaymentModel.aggregate([{ $match: { paymentType: "manual" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
-        OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" } } }]),
-        OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" }, totalPaid: { $sum: "$paidAmount" } } }, { $project: { profit: { $subtract: ["$totalSales", "$totalPaid"] } } }]),
-        UserModel.aggregate([{ $count: "totalUsers" }])
-      ]);
+  //     const [
+  //       totalEarningsAgg,
+  //       monthlyEarningsAgg,
+  //       yearlyEarningsAgg,
+  //       todayEarningsAgg,
+  //       pendingPaymentsAgg,
+  //       manualPaymentsAgg,
+  //       totalSalesAgg,
+  //       totalProfitAgg,
+  //       totalUsersAgg
+  //     ] = await Promise.all([
+  //       PaymentModel.aggregate([{ $match: { status: "succeeded" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+  //       PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+  //       PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfYear } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+  //       PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfToday } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+  //       OrderModel.aggregate([{ $match: { paymentStatus: { $ne: "Paid" } } }, { $group: { _id: null, total: { $sum: "$dueAmount" } } }]),
+  //       PaymentModel.aggregate([{ $match: { paymentType: "manual" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+  //       OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" } } }]),
+  //       OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" }, totalPaid: { $sum: "$paidAmount" } } }, { $project: { profit: { $subtract: ["$totalSales", "$totalPaid"] } } }]),
+  //       UserModel.aggregate([{ $count: "totalUsers" }])
+  //     ]);
 
-      res.status(200).json({
-        totalEarnings: totalEarningsAgg[0]?.total || 0,
-        monthlyEarnings: monthlyEarningsAgg[0]?.total || 0,
-        yearlyEarnings: yearlyEarningsAgg[0]?.total || 0,
-        todayEarnings: todayEarningsAgg[0]?.total || 0,
-        pendingPayments: pendingPaymentsAgg[0]?.total || 0,
-        manualPayments: manualPaymentsAgg[0]?.total || 0,
-        totalSales: totalSalesAgg[0]?.totalSales || 0,
-        totalProfit: totalProfitAgg[0]?.profit || 0,
-        totalUsers: totalUsersAgg[0]?.totalUsers || 0
-      });
-    } catch (error) {
-      next(error);
-    }
-  },
+  //     res.status(200).json({
+  //       totalEarnings: totalEarningsAgg[0]?.total || 0,
+  //       monthlyEarnings: monthlyEarningsAgg[0]?.total || 0,
+  //       yearlyEarnings: yearlyEarningsAgg[0]?.total || 0,
+  //       todayEarnings: todayEarningsAgg[0]?.total || 0,
+  //       pendingPayments: pendingPaymentsAgg[0]?.total || 0,
+  //       manualPayments: manualPaymentsAgg[0]?.total || 0,
+  //       totalSales: totalSalesAgg[0]?.totalSales || 0,
+  //       totalProfit: totalProfitAgg[0]?.profit || 0,
+  //       totalUsers: totalUsersAgg[0]?.totalUsers || 0
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // },
 
   
   // getEarningsDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -265,6 +266,73 @@ const EarningsController = {
   //   };
   //   }
   // };
+
+
+
+ getEarningsDashboard : async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const startOfMonth = moment().startOf("month").toDate();
+    const startOfYear = moment().startOf("year").toDate();
+    const startOfToday = moment().startOf("day").toDate();
+
+    const [
+      totalEarningsAgg,
+      manualTotalEarningsAgg,
+      monthlyEarningsAgg,
+      yearlyEarningsAgg,
+      todayEarningsAgg,
+      pendingPaymentsAgg,
+      manualPaymentsAgg,
+      totalSalesAgg,
+      totalProfitAgg,
+      totalUsersAgg
+    ] = await Promise.all([
+      // ✅ Get total earnings including manual orders
+      PaymentModel.aggregate([{ $match: { status: "succeeded" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      ManualOrderModel.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]),
+
+      // ✅ Monthly earnings
+      PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+      
+      // ✅ Yearly earnings
+      PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfYear } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+
+      // ✅ Today's earnings
+      PaymentModel.aggregate([{ $match: { status: "succeeded", createdAt: { $gte: startOfToday } } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+
+      // ✅ Pending payments
+      OrderModel.aggregate([{ $match: { paymentStatus: { $ne: "Paid" } } }, { $group: { _id: null, total: { $sum: "$dueAmount" } } }]),
+
+      // ✅ Manual payments
+      PaymentModel.aggregate([{ $match: { paymentType: "manual" } }, { $group: { _id: null, total: { $sum: "$amount" } } }]),
+
+      // ✅ Total sales
+      OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" } } }]),
+
+      // ✅ Total profit
+      OrderModel.aggregate([{ $group: { _id: null, totalSales: { $sum: "$totalAmount" }, totalPaid: { $sum: "$paidAmount" } } }, { $project: { profit: { $subtract: ["$totalSales", "$totalPaid"] } } }]),
+
+      // ✅ Total users
+      UserModel.aggregate([{ $count: "totalUsers" }])
+    ]);
+
+    res.status(200).json({
+      totalEarnings: (totalEarningsAgg[0]?.total || 0) + (manualTotalEarningsAgg[0]?.total || 0),
+      monthlyEarnings: monthlyEarningsAgg[0]?.total || 0,
+      yearlyEarnings: yearlyEarningsAgg[0]?.total || 0,
+      todayEarnings: todayEarningsAgg[0]?.total || 0,
+      pendingPayments: pendingPaymentsAgg[0]?.total || 0,
+      manualPayments: manualPaymentsAgg[0]?.total || 0,
+      totalSales: totalSalesAgg[0]?.totalSales || 0,
+      totalProfit: totalProfitAgg[0]?.profit || 0,
+      totalUsers: totalUsersAgg[0]?.totalUsers || 0
+    });
+  } catch (error) {
+    next(error);
+  }
+},
+
+
   getEarningsDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { type } = req.params;

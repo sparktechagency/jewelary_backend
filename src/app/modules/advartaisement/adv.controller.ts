@@ -128,41 +128,49 @@ export const uploadImagesController = (req: Request, res: Response, next: NextFu
 
   export const renameImageController = (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const { filename } = req.params;  // Get the current filename from URL parameters
-      const { newName } = req.body;     // Get the new name from the request body
+      const { filename } = req.params;  // Current filename from URL parameters
+      const { newName } = req.body;     // New name from request body
   
       if (!newName || !filename) {
          res.status(400).json({ message: "Filename and new name are required." });
          return
       }
   
-      const folder = req.params.folder || "general";  // Get folder name from params or default to "general"
-      const oldFilePath = path.join(__dirname, "../../../uploads", folder, filename);
-      const newFilePath = path.join(__dirname, "../../../uploads", folder, newName);
+      const folder = req.params.folder || "general";  // Get folder name or default to "general"
   
-      // Check if the file exists
+      // ✅ Fix: Use `path.resolve()` to build the correct path
+      const uploadsDir = path.resolve(__dirname, "../../../uploads", folder);
+      const oldFilePath = path.join(uploadsDir, filename);
+      const newFilePath = path.join(uploadsDir, newName);
+  
+      // ✅ Debugging: Log paths
+      console.log("🔍 Old File Path:", oldFilePath);
+      console.log("🔍 New File Path:", newFilePath);
+  
+      // ✅ Check if the file exists
       if (!fs.existsSync(oldFilePath)) {
          res.status(404).json({ message: "File not found." });
          return
       }
   
-      // Rename the file
+      // ✅ Rename the file
       fs.rename(oldFilePath, newFilePath, (err) => {
         if (err) {
           console.error("Error renaming file:", err);
           return res.status(500).json({ message: "Error renaming file", error: err.message });
         }
   
-        // Respond with success message and new file path
+        // ✅ Success response
         res.status(200).json({
           message: "Image name updated successfully.",
           newFilePath: `/uploads/${folder}/${newName}`
         });
       });
+  
     } catch (error) {
-      console.error("Error renaming image:", error);
+      console.error(`Error getting images from ${req.params.folder}:`, error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      res.status(500).json({ message: "Error renaming image", error: errorMessage });
+      res.status(500).json({ message: "Error retrieving files", error: errorMessage });
     }
   };
   // Controller to handle retrieving and sorting uploaded images from specific folder

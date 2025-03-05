@@ -11,6 +11,8 @@ import productAttributeRoutes from '../../src/app/modules/product/productAttribu
 import categoryRoutes from '../app/modules/category/categoryRoutes'
 import legalDocumentRoute from '../app/modules/legalDoc/legalDocument.routes';
 import advvartaisement from '../app/modules/advartaisement/adv.route';
+import notification from '../app/modules/notification/notification.route';
+import manualOrderRoutes from '../app/modules/manualorder/manualOrder.route';
 // import productRoute from '../app/modules/product/product.routes'
 
 
@@ -29,12 +31,14 @@ const apiRoutes = [
   { path: '/product-attributes', route: productAttributeRoutes },
   { path: '/categories', route: categoryRoutes},
   { path: '/ads', route:advvartaisement },
+  { path: '/notification', route:notification },
   // product-attributes
   { path: '/orders', route: OrderRoutes },
   { path: '/admin', route: adminRoutes },
   { path: '/payments', route: PaymentRoutes },
   { path: '/admin/payments', route: PaymentRoutes },
-  { path: '/messages', route: MessageRoutes },,
+  { path: '/messages', route: MessageRoutes },
+  { path: '/', route: manualOrderRoutes  },
 
   { path: '/earnings', route: EarningRoutes },
   // { path: '/earnings/monthly', route: EarningRoutes },
