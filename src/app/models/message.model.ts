@@ -7,6 +7,7 @@ export interface IMessage extends Document {
   productId?: mongoose.Types.ObjectId; // ✅ Make productId optional
   messageSource: string;
   senderType: 'user' | 'admin';
+  type: string;
   isRead: boolean;
   files?: string[]; // ✅ Add files field
   createdAt: Date;
@@ -16,9 +17,10 @@ const MessageSchema = new Schema<IMessage>(
   {
     sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
-    content: { type: String, required: true },
+    content: { type: String, required: false },
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: false }, // ✅ Make productId optional
     messageSource: { type: String, required:false }, // ✅ Ensure this field exists
+    type:{ type: String, required:true }, 
     senderType: { type: String, enum: ['user', 'admin'], required: true }, // ✅ Ensure it's required
     isRead: { type: Boolean, default: true },
     files: { type: [String], default: [] }, // ✅ Add files field

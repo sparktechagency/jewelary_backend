@@ -34,7 +34,7 @@ export const initSocket = (server: any) => {
     socket.on("sendMessage", async (data) => {
       console.log("Received Socket Message:", data);
 
-      const { receiverId, content, senderType, productId, messageSource } = data;
+      const { receiverId, content, senderType, productId, messageSource, sender } = data;
 
       if (!receiverId || !content || !senderType || !productId) {
         socket.emit("error", { message: "Missing required fields" });
@@ -44,12 +44,15 @@ export const initSocket = (server: any) => {
       try {
         // Send the message using the MessageService (you can customize the service as needed)
         const message = await MessageService.sendMessage(
+          sender,
           receiverId,
           content,
           senderType,
           productId,
           messageSource
         );
+
+      
 
         // Emit message to the receiver's room (user)
         io.to(receiverId).emit("receiveMessage", message);

@@ -1,5 +1,3 @@
-
-
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
@@ -21,11 +19,11 @@ const upload = multer();
 const app = express();
 
 app.use(cors({
-  origin: ["https://jowel.binarybards.online", "http://10.0.70.206:3000", "http://localhost:3000"],
+  origin: ["https://jowel.binarybards.online", "http://10.0.70.206:3000", "http://localhost:3000","https://relaxed-alfajores-57dad2.netlify.app"],
   credentials: true
 }));
 app.use(cors({
-  origin: ["http://localhost:3000"], // Make sure the client domain is allowed
+  origin: ["http://localhost:3000","https://relaxed-alfajores-57dad2.netlify.app"], // Make sure the client domain is allowed
   credentials: true,
 }))
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

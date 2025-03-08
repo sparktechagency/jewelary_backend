@@ -45,7 +45,7 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
 
     // Attach the decoded user information (userId and role) to req.user
-    req.user = { id: decoded.userId, role: decoded.role };
+    req.user = { _id: decoded.userId,id: decoded.userId, role: decoded.role };
 
     next();  // Proceed to the next middleware or route handler
   } catch (error) {

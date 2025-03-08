@@ -132,7 +132,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   const allowedMimeTypes = [
     "image/jpeg", "image/png", "image/gif", // Images
     "application/pdf", // PDFs
-    "audio/mpeg", "audio/wav", "audio/mp3" // Audio messages
+    "audio/mpeg", "audio/wav", "audio/mp3", "audio/x-m4a", "audio/ogg"// Audio messages
   ];
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -209,4 +209,15 @@ export const uploadDebug = (req: Request, res: Response, next: NextFunction) => 
 };
 
 
+export const uploadVoiceMessage = multer({
+  storage: createStorage("voiceMessages"),
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB per file
+  fileFilter
+}).single("voiceFile"); // Accept only a single voice file
+
+export const uploadAttachments = multer({
+  storage: createStorage("attachments"),
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB per file
+  fileFilter
+}).array("files", 5); // Accept multiple files (up to 5)
 

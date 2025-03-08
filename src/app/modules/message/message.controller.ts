@@ -412,40 +412,13 @@ import { io } from '../../../app';
 import UserModel from '../../models/user.model';
 import { MessageModel } from '../../models/message.model';
 import { AdminModel } from '../../models/admin.model';
+import mongoose from 'mongoose';
+import { types } from 'util';
 
 export class MessageController {
   static getAllMessages(arg0: string, isAuthenticated: (req: import("../../../types/express").AuthRequest, res: Response, next: NextFunction) => void, getAllMessages: any) {
       throw new Error('Method not implemented.');
   }
-
-  // static async sendMessage(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const { receiverId, content, senderType, productId, messageSource } = req.body;
-    
-  //     if (!receiverId || !content || !senderType) {
-  //       res.status(400).json({ message: "Missing required fields" });
-  //       return;
-  //     }
-
-  //     const finalProductId = (messageSource === 'productPage' && senderType === 'user')
-  //       ? productId
-  //       : null;
-
-  //     const message = await MessageService.sendMessage(receiverId, content, senderType, finalProductId, messageSource);
-
-  //     // Emit socket event to notify receiver in real-time
-  //     io.emit(`message::${receiverId}`, {
-  //       content: message.content,
-  //       senderType: message.senderType,
-  //       createdAt: message.createdAt,
-  //     });
-  //     io.to(receiverId).emit("receiveMessage", message);
-
-  //     res.status(201).json(message);
-  //   } catch (error) {
-  //     res.status(500).json({ message: "Error sending message", error });
-  //   }
-  // }
 
   static async getConversation(req: Request, res: Response): Promise<void> {
     try {
@@ -453,22 +426,49 @@ export class MessageController {
         res.status(403).json({ message: "Unauthorized access" });
         return;
       }
-
+  
       const userId = req.user.id;
-      const partnerId = req.params.partnerId;
-
-      if (!partnerId) {
-        res.status(400).json({ message: "Partner ID is required" });
+      
+      // Find the first available admin
+      const admin = await AdminModel.findOne();
+      if (!admin) {
+        res.status(500).json({ message: "Admin not found." });
         return;
       }
-
-      const conversation = await MessageService.getConversation(userId, partnerId);
-      res.status(200).json(conversation);
+      const adminId = admin._id.toString();
+  
+      // Pagination settings
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
+  
+      // Fetch conversation messages between user and admin with pagination
+      const conversation = await MessageModel.find({
+        $or: [
+          { sender: userId, receiver: adminId },
+          { sender: adminId, receiver: userId },
+        ],
+      })
+        .sort({ createdAt: -1 }) // Show latest messages first
+        .skip(skip)
+        .limit(limit);
+  
+      res.status(200).json({
+        success: true,
+        message: "Conversation retrieved successfully.",
+        data: conversation,
+        pagination: {
+          currentPage: page,
+          pageSize: limit,
+        },
+      });
+  
     } catch (error) {
+      console.error("❌ Error retrieving conversation:", error);
       res.status(500).json({ message: "Error retrieving conversation", error });
     }
   }
-
+  
   static async markAsRead(req: Request, res: Response): Promise<void> {
     try {
       const { messageId } = req.params;
@@ -486,303 +486,912 @@ export class MessageController {
   }
 
 
-// static async sendAdminMessage(req: Request, res: Response): Promise<void>{
+// static async sendMessage(req: Request, res: Response): Promise<void> {
 //   try {
-//     const { userId, content } = req.body;
+//     console.log("🔍 Incoming Request Body:", req.body);
+//     console.log("🔍 Incoming Files:", req.files);
 
-//     if (!userId || !content) {
-//       res.status(400).json({ message: "User ID and content are required." });
+//     const { receiverId, content, senderType, productId, messageSource, type } = req.body;
+
+//     if (!type) {
+//       res.status(400).json({ message: "Type is required (text, voice, attachments)." });
 //       return;
 //     }
 
-//     const user = await UserModel.findById(userId);
-//     if (!user) {
-//       res.status(404).json({ message: "User not found." });
+//     let fileUrls: string[] = [];
+//     if (req.files) {
+//       const uploadedFiles = req.files as Express.Multer.File[];
+//       fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
+//     }
+
+//     let finalReceiverId = receiverId;
+
+//     // If sender is a user and no receiver is set, send to the first admin
+//     if (!receiverId && senderType === "user") {
+//       const admin = await AdminModel.findOne();
+//       if (!admin) {
+//         res.status(500).json({ message: "Admin not found." });
+//         return;
+//       }
+//       finalReceiverId = admin._id.toString();
+//     }
+
+//     if (!receiverId && senderType === "admin") {
+//       res.status(400).json({ message: "User ID is required for admin messages." });
 //       return;
 //     }
 
-//     // You must replace this with your actual Admin User ID from the database
-//     const adminUserId = '67c1bb7bb5bc423bfe99c40e';
+//     const finalProductId = (messageSource === "productPage" && senderType === "user") ? productId : null;
+
+//     // Fetch sender user details
+//     let userDetails = null;
+//     if (req.user) {
+//       userDetails = await UserModel.findById(req.user.id).select("username email");
+//     }
 
 //     const message = new MessageModel({
-//       sender: adminUserId,  // ✅ Use a valid ObjectId of admin
-//       receiver: userId,
-//       content,
-//       senderType: 'admin',
+//       sender: req.user ? req.user.id : null,
+//       receiver: finalReceiverId,
+//       content: type === "text" ? content : "[]",
+//       senderType,
+//       productId: finalProductId,
+//       messageSource,
+//       type, // Text, Voice, Attachments
+//       files: fileUrls,
 //       isRead: false,
 //     });
 
 //     await message.save();
 
-//     io.emit(`message::${userId}`, {
+//     console.log("📩 Message Saved:", message);
+
+//     // ✅ Emit event for the receiver (real-time message update)
+//     io.emit(`message::${finalReceiverId}`, {
 //       content: message.content,
 //       senderType: message.senderType,
 //       createdAt: message.createdAt,
+//       type: message.type,
+//       files: message.files,
+//     });
+
+//     io.to(finalReceiverId).emit("receiveMessage", message);
+
+//     // ✅ Emit event to Admin Dashboard with full user details
+//     io.emit("admin::userMessages", {
+//       userId: req.user?.id || "Unknown",
+//       username: userDetails?.username || "Unknown",
+//       email: userDetails?.email || "Unknown",
+//       senderType: senderType,
+//       content: message.content,
+//       type: message.type,
+//       files: message.files,
+//       timestamp: message.createdAt,
 //     });
 
 //     res.status(201).json({
 //       success: true,
-//       message: 'Message sent successfully.',
+//       message: "Message sent successfully.",
 //       data: message,
 //     });
-
 //   } catch (error) {
-//     console.error('Error sending admin message:', error);
-//     res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'Internal Server Error' });
+//     console.error("❌ Error sending message:", error);
+//     res.status(500).json({ message: "Error sending message", error });
 //   }
-// };
+// }
 
 // static async sendMessage(req: Request, res: Response): Promise<void> {
 //   try {
-//       const { receiverId, content, senderType, productId, messageSource } = req.body;
+//     console.log("🔍 Incoming Request Body:", req.body);
+//     console.log("🔍 Incoming Files:", req.files);
 
-//       if (!content && !req.files) {
-//           res.status(400).json({ message: "Either content or a file is required." });
-//           return;
+//     const { receiverId, content, senderType, productId, messageSource, type } = req.body;
+
+//     if (!type) {
+//       res.status(400).json({ message: "Type is required (text, voice, attachments)." });
+//       return;
+//     }
+
+//     let fileUrls: string[] = [];
+//     if (req.files) {
+//       const uploadedFiles = req.files as Express.Multer.File[];
+//       fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
+//     }
+
+//     let finalReceiverId = receiverId;
+
+//     // If sender is a user and no receiver is set, send to the first admin
+//     if (!receiverId && senderType === "user") {
+//       const admin = await AdminModel.findOne();
+//       if (!admin) {
+//         res.status(500).json({ message: "Admin not found." });
+//         return;
 //       }
+//       finalReceiverId = admin._id.toString();
+//     }
 
-//       let finalReceiverId = receiverId;
+//     if (!receiverId && senderType === "admin") {
+//       res.status(400).json({ message: "User ID is required for admin messages." });
+//       return;
+//     }
 
-//       // If user sends a message without specifying an admin, assign it to the first admin found
-//       if (!receiverId && senderType === 'user') {
-//           const admin = await AdminModel.findOne();
-//           if (!admin) {
-//               res.status(500).json({ message: "Admin not found." });
-//               return;
-//           }
-//           finalReceiverId = admin._id.toString();
-//       }
+//     const finalProductId = (messageSource === "productPage" && senderType === "user") ? productId : null;
 
-//       // If admin sends a message without specifying a user, return an error
-//       if (!receiverId && senderType === 'admin') {
-//           res.status(400).json({ message: "User ID is required for admin messages." });
-//           return;
-//       }
+//     // ✅ Fetch sender user details (Ensure user exists)
+//     // let userDetails = { username: "", email: "" }; // Default values
+//     // if (req.user?.id) {
+//     //   const user = await UserModel.findById(req.user.id).select("username email");
+//     //   if (user) {
+//     //     userDetails = { username: user.username, email: user.email };
+//     //   }
+//     // }
 
-//       // Handle file uploads (Images, PDFs, Voice Messages)
-//       let fileUrls: string[] = [];
-//       if (req.files) {
-//           const uploadedFiles = req.files as Express.Multer.File[];
-//           fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
-//       }
+//     // // ✅ Count total messages sent by the user
+//     // const totalMessages = await MessageModel.countDocuments({
+//     //   sender: req.user?.id,
+//     // });
 
-//       const finalProductId = (messageSource === 'productPage' && senderType === 'user') ? productId : null;
+//     // // ✅ Save message to database
+//     // const message = new MessageModel({
+//     //   sender: req.user ? req.user.id : null,
+//     //   receiver: finalReceiverId,
+//     //   content: type === "text" ? content : "[Attachment]",
+//     //   userDetails,
+//     //   senderType,
+//     //   productId: finalProductId,
+//     //   messageSource,
+//     //   type, // Text, Voice, Attachments
+//     //   files: fileUrls,
+//     //   isRead: false,
+//     // });
 
-//       const message = await MessageService.sendMessage(finalReceiverId, content, senderType, finalProductId, messageSource, fileUrls);
+//     // await message.save();
 
-//       // Emit socket event for real-time updates
-//       io.emit(`message::${finalReceiverId}`, {
-//           content: message.content,
-//           senderType: message.senderType,
-//           createdAt: message.createdAt,
-//           files: message.files,
-//       });
+//     // ✅ Fetch sender user details (Ensure user exists)
+// let userDetails = { username: "Unknown", email: "Unknown" }; // Default values
 
-//       io.to(finalReceiverId).emit("receiveMessage", message);
-
-//       res.status(201).json(message);
+// if (req.user?.id) {
+//   try {
+//     const user = await UserModel.findById(req.user.id).select("username email");
+//     if (user) {
+//       userDetails = { username: user.username, email: user.email };
+//     } else {
+//       console.warn(`⚠️ User not found in DB: ${req.user.id}`);
+//     }
 //   } catch (error) {
-//       res.status(500).json({ message: "Error sending message", error });
+//     console.error(`❌ Error fetching user details for ID ${req.user.id}:`, error);
+//   }
+// }
+
+// // ✅ Count total messages sent by the user
+// let totalMessages = 0;
+// try {
+//   totalMessages = await MessageModel.countDocuments({ sender: req.user?.id });
+// } catch (error) {
+//   console.error("❌ Error counting user messages:", error);
+// }
+
+// // ✅ Save message to database
+// const message = new MessageModel({
+//   sender: req.user ? req.user.id : null,
+//   receiver: finalReceiverId,
+//   content: type === "text" ? content : "[Attachment]",
+//   senderType,
+//   productId: finalProductId,
+//   messageSource,
+//   type, // Text, Voice, Attachments
+//   files: fileUrls,
+//   isRead: false,
+//   userDetails, // ✅ Storing user details properly
+// });
+
+// await message.save();
+
+
+//     console.log("📩 Message Saved:", message);
+
+//     // ✅ Emit event for the receiver (real-time message update)
+//     io.emit(`message::${finalReceiverId}`, {
+//       content: message.content,
+//       senderType: message.senderType,
+//       userDetails,
+//       email: userDetails.email,
+//       createdAt: message.createdAt,
+//       type: message.type,
+//       files: message.files,
+//     });
+
+//     io.to(finalReceiverId).emit("receiveMessage", message);
+
+//     // ✅ Emit event to Admin Dashboard with full user details
+//     const socketData = {
+//       userId: req.user?.id || "Unknown",
+//       username: userDetails.username,
+//       email: userDetails.email,
+//       totalMessages: totalMessages,
+//       lastMessage: message.content,
+//       messageType: message.type,
+//       files: message.files,
+//       timestamp: message.createdAt,
+//     };
+
+//     console.log("📢 Emitting to admin::userMessages:", socketData);
+//     io.emit("admin::userMessages", socketData);
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Message sent successfully.",
+//       data: message,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error sending message:", error);
+//     res.status(500).json({ message: "Error sending message", error });
 //   }
 // }
 
 static async sendMessage(req: Request, res: Response): Promise<void> {
   try {
-      console.log("🔍 Incoming Request Body:", req.body);
-      console.log("🔍 Incoming Files:", req.files);
+    console.log("🔍 Incoming Request Body:", req.body);
+    console.log("🔍 Incoming Files:", req.files);
 
-      const { receiverId, content, senderType, productId, messageSource } = req.body;
+    const { receiverId, content, senderType, productId, messageSource, type } = req.body;
 
-      // Ensure Multer properly processes the files
-      let fileUrls: string[] = [];
-      if (req.files && Array.isArray(req.files)) {
-          fileUrls = req.files.map((file: Express.Multer.File) => `/uploads/messages/${file.filename}`);
-      } else if (req.files && typeof req.files === 'object') {
-          Object.values(req.files).forEach((fileArray) => {
-              (fileArray as Express.Multer.File[]).forEach(file => {
-                  fileUrls.push(`/uploads/messages/${file.filename}`);
-              });
-          });
+    if (!type) {
+      res.status(400).json({ message: "Type is required (text, voice, attachments)." });
+      return;
+    }
+
+    let fileUrls: string[] = [];
+    if (req.files) {
+      const uploadedFiles = req.files as Express.Multer.File[];
+      fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
+    }
+
+    let finalReceiverId = receiverId;
+
+    // If sender is a user and no receiver is set, send to the first admin
+    if (!receiverId && senderType === "user") {
+      const admin = await AdminModel.findOne();
+      if (!admin) {
+        res.status(500).json({ message: "Admin not found." });
+        return;
       }
+      finalReceiverId = admin._id.toString();
+    }
 
-      console.log("✅ Extracted File URLs:", fileUrls);
+    if (!receiverId && senderType === "admin") {
+      res.status(400).json({ message: "User ID is required for admin messages." });
+      return;
+    }
 
-      // Ensure at least content or a file is provided
-      if (!content && fileUrls.length === 0) {
-           res.status(400).json({ message: "Either content or a file is required." });
-           return
-      }
+    const finalProductId = (messageSource === "productPage" && senderType === "user") ? productId : null;
 
-      let finalReceiverId = receiverId;
-
-      // If sender is a user and receiver isn't set, send to first admin
-      if (!receiverId && senderType === 'user') {
-          const admin = await AdminModel.findOne();
-          if (!admin) {
-               res.status(500).json({ message: "Admin not found." });
-               return
+    // Get the user ID - IMPORTANT CHANGE HERE
+    const userId = req.user?.id || req.body.userId || req.body.sender;
+    console.log("🔍 Using User ID for lookup:", userId);
+    const user = await UserModel.findById(userId).lean();
+    // Fetch user details with EXPLICIT error handling and conversion to string
+    let userDetails = { username: "Unknown", email: "Unknown" };
+    if (userId) {
+      try {
+        // Convert to string to avoid ObjectId comparison issues
+        const userIdString = userId.toString();
+        console.log("🔍 Looking up user with string ID:", userIdString);
+        
+        
+        console.log("🔍 User lookup result:", user);
+        
+        if (user) {
+          userDetails = { 
+            username: user.username || "Unknown", 
+            email: user.email || "Unknown" 
+          };
+          console.log("✅ Found user details:", userDetails);
+        } else {
+          console.warn(`⚠️ User not found for ID: ${userIdString}`);
+          
+          // Additional fallback: try querying by _id as a last resort
+          console.log("🔄 Attempting alternative lookup with {_id: userId}");
+          const altUser = await UserModel.findOne({ _id: userIdString }).lean();
+          if (altUser) {
+            userDetails = {
+              username: altUser.username || "Unknown",
+              email: altUser.email || "Unknown"
+            };
+            console.log("✅ Found user with alternative lookup:", userDetails);
           }
-          finalReceiverId = admin._id.toString();
+        }
+      } catch (error) {
+        console.error(`❌ Error fetching user details:`, error);
+        // Try a direct MongoDB query as last resort
+        try {
+          console.log("🔄 Attempting raw MongoDB query");
+          const db = mongoose.connection.db;
+          if (!db) {
+            throw new Error("Database connection is not available.");
+          }
+          const userCollection = db.collection('users');
+          const rawUser = await userCollection.findOne({ _id: new mongoose.Types.ObjectId(userId.toString()) });
+          if (rawUser) {
+            userDetails = {
+              username: rawUser.username || "Unknown",
+              email: rawUser.email || "Unknown"
+            };
+            console.log("✅ Found user with raw query:", userDetails);
+          }
+        } catch (dbError) {
+          console.error("❌ Raw DB query also failed:", dbError);
+        }
       }
+    }
 
-      // If sender is an admin and userId isn't provided
-      if (!receiverId && senderType === 'admin') {
-           res.status(400).json({ message: "User ID is required for admin messages." });
-           return
-      }
+    // Count total messages
+    let totalMessages = 0;
+    try {
+      totalMessages = await MessageModel.countDocuments({ sender: userId });
+    } catch (error) {
+      console.error("❌ Error counting user messages:", error);
+    }
 
-      const finalProductId = (messageSource === 'productPage' && senderType === 'user') ? productId : null;
+    // Save message to database
+    const message = new MessageModel({
+      sender: userId,
+      receiver: finalReceiverId,
+      content: type === "text" ? content : "[Attachment]",
+      senderType,
+      productId: finalProductId,
+      messageSource,
+      type,
+      files: fileUrls,
+      isRead: false,
+      userDetails: userDetails, // Using our lookup result
+    });
 
-      // Save message to database
-      const message = new MessageModel({
-          sender: req.user ? req.user.id : null,
-          receiver: finalReceiverId,
-          content,
-          senderType,
-          productId: finalProductId,
-          messageSource,
-          files: fileUrls, // ✅ Storing files in DB
-          isRead: false
-      });
+    await message.save();
+    console.log("📩 Message Saved:", message);
 
-      await message.save();
+    // Socket emissions with our found user details
+    io.emit(`message::${finalReceiverId}`, {
+      content: message.content,
+      senderType: message.senderType,
+      username: userDetails.username,
+      email: userDetails.email,
+      createdAt: message.createdAt,
+      type: message.type,
+      files: message.files,
+    });
 
-      console.log("📩 Message Saved:", message);
+    io.to(finalReceiverId).emit("receiveMessage", message);
 
-      // Emit real-time update via WebSocket
-      io.emit(`message::${finalReceiverId}`, {
-          content: message.content,
-          senderType: message.senderType,
-          createdAt: message.createdAt,
-          files: message.files, // ✅ Send files in socket response
-      });
+    const socketData = {
+      userId: userId || "Unknown",
+      username: userDetails.username,
+      email: userDetails.email,
+      totalMessages: totalMessages,
+      lastMessage: message.content,
+      messageType: message.type,
+      files: message.files,
+      timestamp: message.createdAt,
+    };
 
-      io.to(finalReceiverId).emit("receiveMessage", message);
+    console.log("📢 Emitting to admin::userMessages:", socketData);
+    io.emit("admin::userMessages", socketData);
 
-      res.status(201).json(message);
+    res.status(201).json({
+      success: true,
+      message: "Message sent successfully.",
+      data: message,
+    });
   } catch (error) {
-      console.error("❌ Error sending message:", error);
-      res.status(500).json({ message: "Error sending message", error });
+    console.error("❌ Error sending message:", error);
+    res.status(500).json({ message: "Error sending message", error });
   }
 }
+
 
 
 
 static async sendAdminMessage(req: Request, res: Response): Promise<void> {
   try {
-      const { userId, content } = req.body;
+    const { userId, content, type } = req.body;
 
-      if (!content && !req.files) {
-          res.status(400).json({ message: "Content or a file is required." });
-          return;
+    // Validate required field: "type"
+    if (!type) {
+      res.status(400).json({ message: "Type is required (text, voice, attachments)." });
+      return;
+    }
+
+    let finalUserId = userId;
+
+    // If userId is not provided, find any existing user
+    if (!userId) {
+      const user = await UserModel.findOne();
+      if (!user) {
+        res.status(404).json({ message: "No users found." });
+        return;
+      }
+      finalUserId = (user as any)._id.toString();
+    }
+
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      res.status(500).json({ message: "Admin not found." });
+      return;
+    }
+
+    // Handle file uploads (Attachments and Voice Messages)
+    let fileUrls: string[] = [];
+    if (req.files) {
+      const uploadedFiles = req.files as Express.Multer.File[];
+      fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
+    }
+
+    // Save message to database
+    const message = new MessageModel({
+      sender: admin._id,
+      receiver: finalUserId,
+      content: type === "text" ? content : " ",
+      senderType: "admin",
+      type, // Text, Voice, Attachments
+      isRead: false,
+      files: fileUrls,
+    });
+
+    await message.save();
+
+    console.log("📩 Admin Message Saved:", message);
+
+    // Emit real-time update via WebSocket
+    io.emit(`message::${finalUserId}`, {
+      content: message.content,
+      senderType: message.senderType,
+      createdAt: message.createdAt,
+      type: message.type,
+      files: message.files, // ✅ Send files in socket response
+    });
+
+    io.to(finalUserId).emit("receiveMessage", message);
+
+    res.status(201).json({
+      success: true,
+      message: "Message sent successfully.",
+      data: message,
+    });
+  } catch (error) {
+    console.error("❌ Error sending admin message:", error);
+    res.status(500).json({ message: "Error sending admin message", error });
+  }
+}
+
+// static async getAdminUserConversations(req: Request, res: Response): Promise<void> {
+//   try {
+//     const conversations = await MessageModel.aggregate([
+//       {
+//         $group: {
+//           _id: "$sender",
+//           lastMessage: { $last: "$$ROOT" },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "users",
+//           localField: "_id",
+//           foreignField: "_id",
+//           as: "userDetails",
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+//           userId: "$_id",
+//           userDetails: { $arrayElemAt: ["$userDetails", 0] },
+//           lastMessage: 1,
+//         },
+//       },
+//     ]);
+
+//     res.status(200).json({
+//       success: true,
+//       message: "User conversations retrieved successfully.",
+//       data: conversations,
+//     });
+
+//     // ✅ Emit full user conversation details to Admin Dashboard
+//     io.emit("admin::userList", conversations);
+//   } catch (error) {
+//     console.error("❌ Error retrieving user conversations:", error);
+//     res.status(500).json({ message: "Error retrieving conversations", error });
+//   }
+// }
+
+static async getAdminUserConversations(req: Request, res: Response): Promise<void> {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination metadata
+    const totalConversations = await MessageModel.aggregate([
+      {
+        $group: {
+          _id: "$sender",
+        },
+      },
+    ]);
+
+    const totalPages = Math.ceil(totalConversations.length / limit);
+
+    // Fetch paginated conversations
+    const conversations = await MessageModel.aggregate([
+      {
+        $group: {
+          _id: "$sender",
+          lastMessage: { $last: "$$ROOT" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          userDetails: { $arrayElemAt: ["$userDetails", 0] },
+          lastMessage: 1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "User conversations retrieved successfully.",
+      data: conversations,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        pageSize: limit,
+        totalConversations: totalConversations.length,
+      },
+    });
+
+    // ✅ Emit paginated conversation data to Admin Dashboard
+    io.emit("admin::userList", conversations);
+
+  } catch (error) {
+    console.error("❌ Error retrieving user conversations:", error);
+    res.status(500).json({ message: "Error retrieving conversations", error });
+  }
+}
+
+
+
+static async sendVoiceMessage(req: Request, res: Response): Promise<void> {
+    try {
+      console.log("✅ Incoming Request Body:", req.body);
+      console.log("✅ Incoming Voice File:", req.file);
+
+      const { receiverId, senderType } = req.body;
+
+      // Validate if a voice file is uploaded
+      if (!req.file) {
+         res.status(400).json({ message: "Voice message file is required." });
+         return
       }
 
-      let finalUserId = userId;
+      let finalReceiverId = receiverId;
 
-      // If userId is not provided, find any existing user
-      if (!userId) {
-          const user = await UserModel.findOne();
-          if (!user) {
-              res.status(404).json({ message: "No users found." });
-              return;
-          }
-          finalUserId = (user as any)._id.toString();
+      // If sender is a user and no receiver ID is given, send to the first admin
+      if (!receiverId && senderType === "user") {
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+           res.status(500).json({ message: "Admin not found." });
+           return
+        }
+        finalReceiverId = admin._id.toString();
       }
 
-      const admin = await AdminModel.findOne();
-      if (!admin) {
-          res.status(500).json({ message: "Admin not found." });
-          return;
+      // If sender is an admin and no user ID is provided
+      if (!receiverId && senderType === "admin") {
+         res.status(400).json({ message: "User ID is required for admin messages." });
+         return
       }
 
-      // Handle file uploads (Images, PDFs, Voice Messages)
-      let fileUrls: string[] = [];
-      if (req.files) {
-          const uploadedFiles = req.files as Express.Multer.File[];
-          fileUrls = uploadedFiles.map(file => `/uploads/messages/${file.filename}`);
-      }
+      // Process file URL
+      const voiceFileUrl = `/uploads/voiceMessages/${req.file.filename}`;
 
+      // Save the message
       const message = new MessageModel({
-          sender: admin._id,
-          receiver: finalUserId,
-          content,
-          senderType: 'admin',
-          isRead: false,
-          files: fileUrls,
+        sender: req.user ? req.user.id : null,
+        receiver: finalReceiverId,
+        content: "[Voice Message]",
+        senderType,
+        isRead: false,
+        files: [voiceFileUrl] // Store voice file URL
       });
 
       await message.save();
 
-      io.emit(`message::${finalUserId}`, {
-          content: message.content,
-          senderType: message.senderType,
-          createdAt: message.createdAt,
-          files: message.files,
+      // Emit real-time update via WebSocket
+      io.emit(`message::${finalReceiverId}`, {
+        content: "[Voice Message]",
+        senderType: message.senderType,
+        createdAt: message.createdAt,
+        files: message.files
       });
+
+      io.to(finalReceiverId).emit("receiveMessage", message);
 
       res.status(201).json({
-          success: true,
-          message: "Message sent successfully.",
-          data: message,
+        success: true,
+        message: "Voice message sent successfully.",
+        data: message
       });
-
-  } catch (error) {
-      console.error("Error sending admin message:", error);
-      res.status(500).json({ success: false, message: error instanceof Error ? error.message : "Internal Server Error" });
+    } catch (error) {
+      console.error("❌ Error sending voice message:", error);
+      res.status(500).json({ message: "Error sending voice message", error });
+    }
   }
-}
 
-static async getAllUserMessages(req: Request, res: Response): Promise<void> {
-  try {
-      // Check if the request is from an admin
-      if (!req.user || !req.user.id) {
-        res.status(403).json({ message: "Unauthorized access" });
-        return;
-      }
-      const admin = await AdminModel.findById(req.user.id);
-      if (!admin) {
-           res.status(403).json({ message: "Access denied. Only admins can view messages." });
-           return
+  static async uploadAttachments(req: Request, res: Response): Promise<void> {
+    try {
+      console.log("✅ Incoming Files:", req.files);
+
+      if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+         res.status(400).json({ message: "At least one attachment is required." });
+         return
       }
 
-      // Fetch all users who have sent messages
-      const usersWithMessages = await MessageModel.aggregate([
-          {
-              $group: {
-                  _id: "$sender", // Group messages by sender (user)
-                  messages: {
-                      $push: {
-                          _id: "$_id",
-                          content: "$content",
-                          files: "$files",
-                          senderType: "$senderType",
-                          createdAt: "$createdAt"
-                      }
-                  }
-              }
-          },
-          {
-              $lookup: {
-                  from: "users",
-                  localField: "_id",
-                  foreignField: "_id",
-                  as: "userDetails"
-              }
-          },
-          { $unwind: "$userDetails" }, // Get user details
-          { $sort: { "messages.createdAt": -1 } } // Sort messages (latest first)
-      ]);
+      // Process file URLs
+      const fileUrls = (req.files as Express.Multer.File[]).map(file => `/uploads/attachments/${file.filename}`);
 
-      res.status(200).json({
-          success: true,
-          message: "User messages retrieved successfully.",
-          data: usersWithMessages,
+      res.status(201).json({
+        success: true,
+        message: "Attachments uploaded successfully.",
+        files: fileUrls
       });
-  } catch (error) {
-      console.error("❌ Error retrieving user messages:", error);
-      res.status(500).json({ message: "Error retrieving messages", error });
+    } catch (error) {
+      console.error("❌ Error uploading attachments:", error);
+      res.status(500).json({ message: "Error uploading attachments", error });
+    }
   }
+
+  // static async getAllUserMessages(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     // Check if the request is from an admin
+  //     if (!req.user || !req.user.id) {
+  //       res.status(403).json({ message: "Unauthorized access" });
+  //       return;
+  //     }
+  //     const admin = await AdminModel.findById(req.user.id);
+  //     if (!admin) {
+  //       res.status(403).json({ message: "Access denied. Only admins can view messages." });
+  //       return;
+  //     }
+  
+  //     // Fetch all users who have sent messages
+  //     const usersWithMessages = await MessageModel.aggregate([
+  //       {
+  //         $group: {
+  //           _id: "$sender", // Group messages by sender (user)
+  //           messages: {
+  //             $push: {
+  //               _id: "$_id",
+  //               content: "$content",
+  //               type: "$type",
+  //               files: "$files", // Include images, PDFs, voice messages
+  //               senderType: "$senderType",
+  //               createdAt: "$createdAt",
+  //             },
+  //           },
+  //         },
+  //       },
+  //       {
+  //         $lookup: {
+  //           from: "users",
+  //           localField: "_id",
+  //           foreignField: "_id",
+  //           as: "userDetails",
+  //         },
+  //       },
+  //       { $unwind: "$userDetails" }, // Get user details
+  //       { $sort: { "messages.createdAt": -1 } }, // Sort messages (latest first)
+  //     ]);
+  
+  //     // Process each user’s messages to separate attachments & voice messages
+  //     const formattedData = usersWithMessages.map(user => ({
+  //       _id: user._id,
+  //       userDetails: user.userDetails,
+  //       messages: user.messages.map((msg: { _id: any; content: any; senderType: any; type: any, createdAt: any; files: any[]; }) => ({
+  //         _id: msg._id,
+  //         content: msg.content,
+  //         senderType: msg.senderType,
+  //         type: msg.type,
+  //         createdAt: msg.createdAt,
+  //         attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+  //         voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+  //       })),
+  //     }));
+  
+  //     res.status(200).json({
+  //       success: true,
+  //       message: "User messages retrieved successfully.",
+  //       data: formattedData,
+  //     });
+  //   } catch (error) {
+  //     console.error("❌ Error retrieving user messages:", error);
+  //     res.status(500).json({ message: "Error retrieving messages", error });
+  //   }
+  // }
+  
+  static async getAllUserMessages(req: Request, res: Response): Promise<void> {
+    try {
+        // Check if the request is from an admin
+        if (!req.user || !req.user.id) {
+            res.status(403).json({ message: "Unauthorized access" });
+            return;
+        }
+        const admin = await AdminModel.findById(req.user.id);
+        if (!admin) {
+            res.status(403).json({ message: "Access denied. Only admins can view messages." });
+            return;
+        }
+
+        // Fetch all users who have sent messages, sorting by last message timestamp
+        const usersWithMessages = await MessageModel.aggregate([
+            {
+                $sort: { createdAt: -1 }, // ✅ Sort messages by latest first
+            },
+            {
+                $group: {
+                    _id: "$sender", // Group messages by sender (user)
+                    lastMessage: { $first: "$$ROOT" }, // ✅ Get the last message per user
+                    messages: { $push: "$$ROOT" }, // Store all messages for this user
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "userDetails",
+                },
+            },
+            { $unwind: "$userDetails" }, // Get user details
+        ]);
+
+        // ✅ Process messages to separate attachments & voice messages
+        const formattedData = usersWithMessages.map(user => ({
+            _id: user._id,
+            userDetails: user.userDetails,
+            lastMessage: {
+                _id: user.lastMessage._id,
+                content: user.lastMessage.content,
+                senderType: user.lastMessage.senderType,
+                type: user.lastMessage.type || "text",
+                createdAt: user.lastMessage.createdAt,
+                attachments: user.lastMessage.files?.filter((file: string | string[]) => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+                voiceMessages: user.lastMessage.files?.filter((file: string | string[]) => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+            },
+            messages: user.messages.map((msg: { _id: any; content: any; senderType: any; type: any; createdAt: any; files: any[] }) => ({
+                _id: msg._id,
+                content: msg.content,
+                senderType: msg.senderType,
+                type: msg.type || "text",
+                createdAt: msg.createdAt,
+                attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+                voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+            })),
+        }));
+
+        // ✅ Emit user details & conversation to Admin WebSocket
+        io.emit("admin::userMessages", formattedData);
+
+        res.status(200).json({
+            success: true,
+            message: "User messages retrieved successfully.",
+            data: formattedData,
+        });
+
+    } catch (error) {
+        console.error("❌ Error retrieving user messages:", error);
+        res.status(500).json({ message: "Error retrieving messages", error });
+    }
 }
+
+
+
+  static async getUserConversationByAdmin(req: Request, res: Response): Promise<void> {
+    try {
+        if (!req.user || req.user.role !== "admin") {
+            res.status(403).json({ message: "Unauthorized access. Admins only." });
+            return;
+        }
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            res.status(400).json({ message: "User ID is required." });
+            return;
+        }
+
+        // Validate user existence
+        const user = await UserModel.findById(userId).select("username email");
+        if (!user) {
+            res.status(404).json({ message: "User not found." });
+            return;
+        }
+
+        // Pagination settings
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // Fetch user messages with pagination
+        const conversation = await MessageModel.find({
+            $or: [
+                { sender: userId },
+                { receiver: userId },
+            ],
+        })
+        .sort({ createdAt: -1 }) // Latest messages first
+        .skip(skip)
+        .limit(limit)
+        .select("_id sender receiver content senderType isRead createdAt updatedAt type files"); // ✅ Ensure `type` is included
+
+        // ✅ Process messages to categorize attachments & voice messages
+        const formattedMessages = conversation.map(msg => ({
+            _id: msg._id,
+            content: msg.content,
+            senderType: msg.senderType,
+            type: msg.type || "text", // ✅ Ensure `type` is always present
+            createdAt: msg.createdAt,
+            attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+            voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+        }));
+
+        const totalMessages = await MessageModel.countDocuments({
+            $or: [
+                { sender: userId },
+                { receiver: userId },
+            ],
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User conversation retrieved successfully.",
+            data: formattedMessages,  // ✅ Return processed messages
+            userDetails: user,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(totalMessages / limit),
+                pageSize: limit,
+                totalMessages,
+            },
+        });
+
+        // ✅ Emit user details & conversation to Admin WebSocket
+        io.emit("admin::userMessages", {
+            userId,
+            username: user.username,
+            email: user.email,
+            totalMessages,
+            lastMessage: formattedMessages.length > 0 ? formattedMessages[0].content : "No messages yet.",
+            messages: formattedMessages, // ✅ Ensuring `type` is included
+        });
+
+    } catch (error) {
+        console.error("❌ Error retrieving user conversation:", error);
+        res.status(500).json({ message: "Error retrieving user conversation", error });
+    }
+}
+
+
 
 
 

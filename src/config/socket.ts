@@ -45,7 +45,7 @@ export const initSocket = (server: any) => {
     // });
 
     socket.on("sendMessage", async (data) => {
-      const { receiverId, content, senderType, productId, messageSource } = data;
+      const { receiverId, content, senderType, productId, messageSource,sender } = data;
 
       if (!receiverId || !content || !senderType) {
         socket.emit("error", { message: "Missing required fields" });
@@ -55,7 +55,7 @@ export const initSocket = (server: any) => {
       const finalProductId = (messageSource === 'productPage' && senderType === 'user') ? productId : null;
 
       try {
-        const message = await MessageService.sendMessage(receiverId, content, senderType, finalProductId, messageSource);
+        const message = await MessageService.sendMessage(receiverId, content, senderType, finalProductId, messageSource, sender);
         io.to(receiverId).emit("receiveMessage", message);
         socket.emit("messageSent", message);
       } catch (error) {
