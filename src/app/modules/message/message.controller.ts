@@ -1161,149 +1161,184 @@ static async sendVoiceMessage(req: Request, res: Response): Promise<void> {
     }
   }
 
-  // static async getAllUserMessages(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     // Check if the request is from an admin
-  //     if (!req.user || !req.user.id) {
-  //       res.status(403).json({ message: "Unauthorized access" });
-  //       return;
-  //     }
-  //     const admin = await AdminModel.findById(req.user.id);
-  //     if (!admin) {
-  //       res.status(403).json({ message: "Access denied. Only admins can view messages." });
-  //       return;
-  //     }
   
-  //     // Fetch all users who have sent messages
-  //     const usersWithMessages = await MessageModel.aggregate([
-  //       {
-  //         $group: {
-  //           _id: "$sender", // Group messages by sender (user)
-  //           messages: {
-  //             $push: {
-  //               _id: "$_id",
-  //               content: "$content",
-  //               type: "$type",
-  //               files: "$files", // Include images, PDFs, voice messages
-  //               senderType: "$senderType",
-  //               createdAt: "$createdAt",
-  //             },
-  //           },
-  //         },
-  //       },
-  //       {
-  //         $lookup: {
-  //           from: "users",
-  //           localField: "_id",
-  //           foreignField: "_id",
-  //           as: "userDetails",
-  //         },
-  //       },
-  //       { $unwind: "$userDetails" }, // Get user details
-  //       { $sort: { "messages.createdAt": -1 } }, // Sort messages (latest first)
-  //     ]);
-  
-  //     // Process each user’s messages to separate attachments & voice messages
-  //     const formattedData = usersWithMessages.map(user => ({
-  //       _id: user._id,
-  //       userDetails: user.userDetails,
-  //       messages: user.messages.map((msg: { _id: any; content: any; senderType: any; type: any, createdAt: any; files: any[]; }) => ({
-  //         _id: msg._id,
-  //         content: msg.content,
-  //         senderType: msg.senderType,
-  //         type: msg.type,
-  //         createdAt: msg.createdAt,
-  //         attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
-  //         voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
-  //       })),
-  //     }));
-  
-  //     res.status(200).json({
-  //       success: true,
-  //       message: "User messages retrieved successfully.",
-  //       data: formattedData,
-  //     });
-  //   } catch (error) {
-  //     console.error("❌ Error retrieving user messages:", error);
-  //     res.status(500).json({ message: "Error retrieving messages", error });
-  //   }
-  // }
-  
-  static async getAllUserMessages(req: Request, res: Response): Promise<void> {
-    try {
-        // Check if the request is from an admin
-        if (!req.user || !req.user.id) {
-            res.status(403).json({ message: "Unauthorized access" });
-            return;
-        }
-        const admin = await AdminModel.findById(req.user.id);
-        if (!admin) {
-            res.status(403).json({ message: "Access denied. Only admins can view messages." });
-            return;
-        }
+//   static async getAllUserMessages(req: Request, res: Response): Promise<void> {
+//     try {
+//         // Check if the request is from an admin
+//         if (!req.user || !req.user.id) {
+//             res.status(403).json({ message: "Unauthorized access" });
+//             return;
+//         }
+//         const admin = await AdminModel.findById(req.user.id);
+//         if (!admin) {
+//             res.status(403).json({ message: "Access denied. Only admins can view messages." });
+//             return;
+//         }
 
-        // Fetch all users who have sent messages, sorting by last message timestamp
-        const usersWithMessages = await MessageModel.aggregate([
-            {
-                $sort: { createdAt: -1 }, // ✅ Sort messages by latest first
-            },
-            {
-                $group: {
-                    _id: "$sender", // Group messages by sender (user)
-                    lastMessage: { $first: "$$ROOT" }, // ✅ Get the last message per user
-                    messages: { $push: "$$ROOT" }, // Store all messages for this user
-                },
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "userDetails",
-                },
-            },
-            { $unwind: "$userDetails" }, // Get user details
-        ]);
+//         // Fetch all users who have sent messages, sorting by last message timestamp
+//         const usersWithMessages = await MessageModel.aggregate([
+//             {
+//                 $sort: { createdAt: -1 }, // ✅ Sort messages by latest first
+//             },
+//             {
+//                 $group: {
+//                     _id: "$sender", // Group messages by sender (user)
+//                     lastMessage: { $first: "$$ROOT" }, // ✅ Get the last message per user
+//                     messages: { $push: "$$ROOT" }, // Store all messages for this user
+//                 },
+//             },
+//             {
+//                 $lookup: {
+//                     from: "users",
+//                     localField: "_id",
+//                     foreignField: "_id",
+//                     as: "userDetails",
+//                 },
+//             },
+//             { $unwind: "$userDetails" }, // Get user details
+//         ]);
 
-        // ✅ Process messages to separate attachments & voice messages
-        const formattedData = usersWithMessages.map(user => ({
-            _id: user._id,
-            userDetails: user.userDetails,
-            lastMessage: {
-                _id: user.lastMessage._id,
-                content: user.lastMessage.content,
-                senderType: user.lastMessage.senderType,
-                type: user.lastMessage.type || "text",
-                createdAt: user.lastMessage.createdAt,
-                attachments: user.lastMessage.files?.filter((file: string | string[]) => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
-                voiceMessages: user.lastMessage.files?.filter((file: string | string[]) => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
-            },
-            messages: user.messages.map((msg: { _id: any; content: any; senderType: any; type: any; createdAt: any; files: any[] }) => ({
-                _id: msg._id,
-                content: msg.content,
-                senderType: msg.senderType,
-                type: msg.type || "text",
-                createdAt: msg.createdAt,
-                attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
-                voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
-            })),
-        }));
+//         // ✅ Process messages to separate attachments & voice messages
+//         const formattedData = usersWithMessages.map(user => ({
+//             _id: user._id,
+//             userDetails: user.userDetails,
+//             lastMessage: {
+//                 _id: user.lastMessage._id,
+//                 content: user.lastMessage.content,
+//                 senderType: user.lastMessage.senderType,
+//                 type: user.lastMessage.type || "text",
+//                 createdAt: user.lastMessage.createdAt,
+//                 attachments: user.lastMessage.files?.filter((file: string | string[]) => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+//                 voiceMessages: user.lastMessage.files?.filter((file: string | string[]) => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+//             },
+//             messages: user.messages.map((msg: { _id: any; content: any; senderType: any; type: any; createdAt: any; files: any[] }) => ({
+//                 _id: msg._id,
+//                 content: msg.content,
+//                 senderType: msg.senderType,
+//                 type: msg.type || "text",
+//                 createdAt: msg.createdAt,
+//                 attachments: msg.files?.filter(file => !file.includes(".mp3") && !file.includes(".wav") && !file.includes(".m4a") && !file.includes(".ogg")) || [],
+//                 voiceMessages: msg.files?.filter(file => file.includes(".mp3") || file.includes(".wav") || file.includes(".m4a") || file.includes(".ogg")) || [],
+//             })),
+//         }));
 
-        // ✅ Emit user details & conversation to Admin WebSocket
-        io.emit("admin::userMessages", formattedData);
+//         // ✅ Emit user details & conversation to Admin WebSocket
+//         io.emit("admin::userMessages", formattedData);
 
-        res.status(200).json({
-            success: true,
-            message: "User messages retrieved successfully.",
-            data: formattedData,
-        });
+//         res.status(200).json({
+//             success: true,
+//             message: "User messages retrieved successfully.",
+//             data: formattedData,
+//         });
 
-    } catch (error) {
-        console.error("❌ Error retrieving user messages:", error);
-        res.status(500).json({ message: "Error retrieving messages", error });
+//     } catch (error) {
+//         console.error("❌ Error retrieving user messages:", error);
+//         res.status(500).json({ message: "Error retrieving messages", error });
+//     }
+// }
+
+static async getAllUserMessages(req: Request, res: Response): Promise<void> {
+  try {
+    // Check if the request is from an admin
+    if (!req.user || !req.user.id) {
+      res.status(403).json({ message: "Unauthorized access" });
+      return;
     }
-}
 
+    const admin = await AdminModel.findById(req.user.id);
+    if (!admin) {
+      res.status(403).json({ message: "Access denied. Only admins can view messages." });
+      return;
+    }
+
+    // ✅ Extract search param
+    const search = req.query.search as string | undefined;
+
+    // Create the aggregation pipeline
+    const aggregatePipeline: any[] = [
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$sender",
+          lastMessage: { $first: "$$ROOT" },
+          messages: { $push: "$$ROOT" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      { $unwind: "$userDetails" },
+    ];
+
+    // ✅ Add search filter after lookup if search is provided
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+
+      aggregatePipeline.push({
+        $match: {
+          $or: [
+            { "userDetails.name": searchRegex },
+            { "userDetails.email": searchRegex },
+            { "userDetails.username": searchRegex },
+            { "lastMessage.content": searchRegex }, // Search in the last message content
+            { "messages.content": searchRegex }, // Search in the content of all messages
+          ],
+        },
+      });
+    }
+
+    const usersWithMessages = await MessageModel.aggregate(aggregatePipeline);
+
+    // Format the results
+    const formattedData = usersWithMessages.map(user => ({
+      _id: user._id,
+      userDetails: user.userDetails,
+      lastMessage: {
+        _id: user.lastMessage._id,
+        content: user.lastMessage.content,
+        senderType: user.lastMessage.senderType,
+        type: user.lastMessage.type || "text",
+        createdAt: user.lastMessage.createdAt,
+        attachments: user.lastMessage.files?.filter((file: string) =>
+          !file.match(/\.(mp3|wav|m4a|ogg)$/i)
+        ) || [],
+        voiceMessages: user.lastMessage.files?.filter((file: string) =>
+          file.match(/\.(mp3|wav|m4a|ogg)$/i)
+        ) || [],
+      },
+      messages: user.messages.map((msg: any) => ({
+        _id: msg._id,
+        content: msg.content,
+        senderType: msg.senderType,
+        type: msg.type || "text",
+        createdAt: msg.createdAt,
+        attachments: msg.files?.filter((file: string) =>
+          !file.match(/\.(mp3|wav|m4a|ogg)$/i)
+        ) || [],
+        voiceMessages: msg.files?.filter((file: string) =>
+          file.match(/\.(mp3|wav|m4a|ogg)$/i)
+        ) || [],
+      })),
+    }));
+
+    // Emit to Admin WebSocket
+    io.emit("admin::userMessages", formattedData);
+
+    res.status(200).json({
+      success: true,
+      message: "User messages retrieved successfully.",
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("❌ Error retrieving user messages:", error);
+    res.status(500).json({ message: "Error retrieving messages", error });
+  }
+}
 
 
   static async getUserConversationByAdmin(req: Request, res: Response): Promise<void> {

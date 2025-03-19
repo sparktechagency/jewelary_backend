@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import UserModel from "../../models/user.model";
+import UserModel, { IUser } from "../../models/user.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -171,34 +171,51 @@ export const UserController = {
   login: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
-  
+
+      // Validate input
+      if (!email || !password) {
+        res.status(400).json({ success: false, message: "Email and password are required" });
+        return;
+      }
+
+      // Check if user exists
       const user = await UserModel.findOne({ email });
       if (!user) {
-        res.status(400).json({ message: "Invalid credentials" });
+        res.status(404).json({ success: false, message: "User not found" });
         return;
       }
-  
-      // Compare password
+
+      // Verify password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        res.status(400).json({ message: "Invalid credentials" });
+        res.status(401).json({ success: false, message: "Incorrect password" });
         return;
       }
-  
+
       // Check if account is active
       if (!user.active) {
-        res.status(403).json({ message: "Your account is deactive. Please contact support." });
+        res.status(403).json({ success: false, message: "Your account is deactivated. Please contact support." });
         return;
       }
-  
+
       // Create JWT token
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "default_secret", {
-        expiresIn: "1h",
+      const token = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "8h" }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        token,
+        userId: user._id,
+        username: user.username,
+        phoneNumber: user.phoneNumber,
       });
-  
-      res.status(200).json({ message: "Login successful", token, userId: user._id, user: user.username, Phone: user.phoneNumber });
     } catch (error) {
-      next(error);
+      console.error("Login error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
 
@@ -466,11 +483,13 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
 },
 
 
+
+
 // userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //   try {
 //     // Fetch all orders along with user details by populating userId
 //     const orders = await OrderModel.find({})
-//       .populate("userId", "username email phoneNumber") // Populate user details
+//       .populate("userId", "username email phoneNumber")  // Populate user details
 //       .select("orderStatus totalAmount paidAmount dueAmount paymentStatus orderStatus userId contactName contactNumber deliverTo") // Select necessary fields
 
 //     // Calculate the necessary order statistics
@@ -494,10 +513,14 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
 //       contactName: order.contactName,
 //       contactNumber: order.contactNumber,
 //       deliverTo: order.deliverTo,
-//       user: {
-//         name: order.userId.username, // Access populated fields
-//         email: order.userId.email,
-//         phoneNumber: order.userId.phoneNumber
+//       user: order.userId ? {  // Check if userId exists
+//         name: order.userId.username || 'N/A',  // Fallback if username is missing
+//         email: order.userId.email || 'N/A',    // Fallback if email is missing
+//         phoneNumber: order.userId.phoneNumber || 'N/A'  // Fallback if phoneNumber is missing
+//       } : {  // In case userId is null
+//         name: 'Unknown User',
+//         email: 'Unknown Email',
+//         phoneNumber: 'Unknown Phone Number'
 //       }
 //     }));
 
@@ -516,13 +539,12 @@ getTotalUsers: async (req: Request, res: Response, next: NextFunction): Promise<
 //   }
 // },
 
-
 userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Fetch all orders along with user details by populating userId
     const orders = await OrderModel.find({})
       .populate("userId", "username email phoneNumber")  // Populate user details
-      .select("orderStatus totalAmount paidAmount dueAmount paymentStatus orderStatus userId contactName contactNumber deliverTo") // Select necessary fields
+      .select("orderStatus totalAmount paidAmount dueAmount paymentStatus userId contactName contactNumber deliverTo") // Select necessary fields
 
     // Calculate the necessary order statistics
     const totalOrders = orders.length;
@@ -545,31 +567,38 @@ userAllOrderDetails: async (req: Request, res: Response, next: NextFunction): Pr
       contactName: order.contactName,
       contactNumber: order.contactNumber,
       deliverTo: order.deliverTo,
-      user: order.userId ? {  // Check if userId exists
-        name: order.userId.username || 'N/A',  // Fallback if username is missing
-        email: order.userId.email || 'N/A',    // Fallback if email is missing
-        phoneNumber: order.userId.phoneNumber || 'N/A'  // Fallback if phoneNumber is missing
-      } : {  // In case userId is null
+      user: order.userId ? {  // Ensure `userId` is populated
+        name: (order.userId as IUser).username || 'N/A',  // Use type assertion to treat userId as IUser
+        email: (order.userId as IUser).email || 'N/A',    // Use type assertion
+        phoneNumber: (order.userId as IUser).phoneNumber || 'N/A'  // Use type assertion
+      } : {  // In case `userId` is null
         name: 'Unknown User',
         email: 'Unknown Email',
         phoneNumber: 'Unknown Phone Number'
       }
     }));
 
-    res.json({
+    // Prepare structured response
+    const orderStatistics = {
       totalOrders,
       cancelledOrders,
       pendingOrders,
       runningOrders,
       completedOrders,
       totalPaid,
-      totalDue,
+      totalDue
+    };
+
+    // Send response with order statistics and order details
+    res.json({
+      orderStatistics,
       orderDetails
     });
   } catch (error) {
     next(error); // Pass error to middleware
   }
 },
+
 
 
 // searchUser: async (req: Request, res: Response, next: NextFunction): Promise<void> => {

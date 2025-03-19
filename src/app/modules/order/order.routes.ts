@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { OrderController } from "./order.controller";
-import { isAuthenticated, isAdmin } from "../auth/auth.middleware";
+import { isAuthenticated, isAdmin, verifyToken } from "../auth/auth.middleware";
 import { getMyOrders } from "./order.status";
+import { verify } from "crypto";
 
 
 const router = Router();
 
 // User routes
-router.post("/place-order", isAuthenticated, OrderController.placeOrder);
+router.post("/place-order", isAuthenticated,verifyToken, OrderController.placeOrder);
 // router.get("/my-orders", isAuthenticated, OrderController.getOrderStatus);
 router.get("/my-orders", isAuthenticated, getMyOrders);
 
@@ -28,7 +29,7 @@ router.get("/cancelledOrder", isAuthenticated, isAdmin, OrderController.getCance
 
 router.get("/orderStatusCounts", isAuthenticated, isAdmin, OrderController.getOrderStatusCounts);
 router.get("/getPaymentPaid", isAuthenticated, isAdmin, OrderController.getPaymentPaid);
-router.put("/order-action", OrderController.acceptOrCancelOrderController);
+router.put("/order-action",  OrderController.acceptOrCancelOrderController);
 // Admin routes
 router.get("/", isAuthenticated, isAdmin, OrderController.getAllOrders);
 router.patch("/:id/update-status", isAuthenticated, isAdmin, OrderController.updateOrderStatus);

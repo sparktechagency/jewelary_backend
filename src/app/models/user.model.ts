@@ -64,11 +64,12 @@ interface CartItem {
 
 export interface IUser extends Document {
   username: string;
-  email: string;
+  email: string | undefined;
   phoneNumber: string;
   businessName: string;
   location: string | null;
   password: string;
+  invoice: boolean;
   confirmPassword: string;
   passwordResetToken?: string;
   resetTokenExpiry?: Date;
@@ -89,6 +90,7 @@ const UserSchema: Schema = new Schema(
     location: { type: String, default: null },
     password: { type: String, required: true },
     confirmPassword: { type: String, required: true },
+    invoice: { type: Boolean, default: true },
     passwordResetToken: { type: String },
     resetTokenExpiry: { type: Date },
     cart: [

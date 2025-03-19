@@ -5,6 +5,7 @@ import { isAuthenticated } from '../auth/auth.middleware';
 import {verifyToken}  from '../auth/auth.middleware';
 import { profile } from 'console';
 import { profileController } from './profile.controller';
+import { OrderController } from '../order/order.controller';
 // import { getTotalUsers } from './user.controller';
 
 const router = Router();
@@ -23,5 +24,6 @@ router.delete("/delete/:id", isAuthenticated, UserController.deleteUser); //dele
 router.get("/profile", isAuthenticated, profileController.getUserProfile); // GET user profile
 router.put("/profile/update", isAuthenticated, profileController.updateUserProfile); // UPDATE profile
 router.put("/change-password", isAuthenticated ,UserController.changePassword); // Set new password after OTP
+router.put("/update-invoice",isAuthenticated, OrderController.updateInvoice)
 
 export default router;

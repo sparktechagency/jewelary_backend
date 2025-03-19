@@ -26,31 +26,79 @@ export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
+// export const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//   try {
+//     const token = req.headers.authorization?.split(" ")[1];  // Extract token from "Bearer <token>"
+
+//     if (!token) {
+//       res.status(401).json({ message: "No token provided." });
+//       return;
+//     }
+
+//     // Verify token and extract the payload
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as {
+//       email: (email: any, newOrder: any) => unknown; userId: string; role: string 
+// };
+
+//     // Ensure that the userId is a valid ObjectId
+//     if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
+//        res.status(400).json({ message: "Invalid user ID in token." });
+//        return
+//     }
+
+//     // Attach the decoded user information (userId and role) to req.user
+//     req.user = { _id: decoded.userId, id: decoded.userId, role: decoded.role, email: decoded.email };
+
+//     next();  // Proceed to the next middleware or route handler
+//   } catch (error) {
+//     console.error("Token verification error:", error);
+//     res.status(401).json({ message: "Invalid or expired token." });
+//   }
+// };
+
+
+
+// Extend Express Request
+
+
 export const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const token = req.headers.authorization?.split(' ')[1]; // Extract token from the Authorization header
+
+  if (!token) {
+     res.status(401).json({ message: "No token provided." });
+     return
+  }
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];  // Extract token from "Bearer <token>"
+    // Decode the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret') as { userId: string; role: string };
 
-    if (!token) {
-      res.status(401).json({ message: "No token provided." });
-      return;
-    }
+    // Log the decoded token to check if it's correct
+    console.log("Decoded Token:", decoded);
 
-    // Verify token and extract the payload
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as { userId: string; role: string };
+    // Fetch the user based on userId decoded from the token
+    const user = await UserModel.findById(decoded.userId).lean();  // Fetch the user document from the DB
 
-    // Ensure that the userId is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
-       res.status(400).json({ message: "Invalid user ID in token." });
+    if (!user) {
+       res.status(404).json({ message: "User not found." });
        return
     }
 
-    // Attach the decoded user information (userId and role) to req.user
-    req.user = { _id: decoded.userId,id: decoded.userId, role: decoded.role };
+    // Populate the req.user object with the user data
+    req.user = {
+      _id: user._id.toString(),
+      id: user._id.toString(),
+      role: decoded.role,
+      email: user.email || '', // Ensure email is correctly assigned
+    };
 
-    next();  // Proceed to the next middleware or route handler
+    console.log("User fetched from DB:", req.user); // Log the user to verify email field
+
+    next();  // Proceed to the next middleware/route handler
   } catch (error) {
     console.error("Token verification error:", error);
-    res.status(401).json({ message: "Invalid or expired token." });
+     res.status(401).json({ message: "Invalid or expired token." });
+     return
   }
 };
 

@@ -128,7 +128,8 @@ import mongoose, { Schema, Document } from "mongoose";
 import { IUser } from "./user.model";  // Import IUser interface
 
 interface IOrder extends Document {
-  userId: IUser; // userId is now typed as the populated IUser document
+  userId: mongoose.Types.ObjectId | IUser;
+  // userId: IUser; // userId is now typed as the populated IUser document
   _id: mongoose.Types.ObjectId;
   items: {
     productId: mongoose.Types.ObjectId;
