@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { emailHelper } from "../mailer/mailer";
 import OrderModel from "../../models/order.model";
+import mongoose from "mongoose";
+import { AuthRequest } from "../../../types/express";
 
 export const UserController = {
 
@@ -219,58 +221,120 @@ export const UserController = {
     }
   },
 
-  updateActiveStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // updateActiveStatus: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const { id } = req.params;
+  //     const { active } = req.body;
+  
+  //     console.log("🔍 Incoming User ID:", id);
+  //     console.log("🔍 Active Status from Request:", active);
+  //     console.log("🔍 User Making Request:", req.user);
+  
+  //     // Validate that active is a boolean
+  //     if (typeof active !== "boolean") {
+  //        res.status(400).json({ message: "Active status must be a boolean value." });
+  //        return
+  //     }
+  
+  //     // Ensure the requester is an admin
+  //     if (!req.user || (req.user as any).role !== "admin") {
+  //        res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
+         
+  //         return
+  //     }
+  
+  //     // ✅ Find user before update
+  //     const existingUser = await UserModel.findById(id);
+  //     if (!existingUser) {
+  //        res.status(404).json({ message: "User not found." });
+  //        return
+  //     }
+  
+  //     console.log("🔍 Existing User Status:", existingUser.active);
+  
+  //     // ✅ Use `findByIdAndUpdate` for a direct DB update
+  //     const updatedUser = await UserModel.findByIdAndUpdate(
+  //       id,
+  //       { $set: { active } }, // Ensure proper update
+  //       { new: true, runValidators: true } // Return updated document
+  //     );
+  
+  //     if (!updatedUser) {
+  //        res.status(404).json({ message: "User not found." });
+  //        return
+  //     }
+  
+  //     console.log("✅ Updated User Status:", updatedUser.active);
+  
+  //     res.status(200).json({ message: "User active status updated.", active: updatedUser.active });
+  
+  //   } catch (error) {
+  //     console.error("❌ Error updating user:", error);
+  //     next(error);
+  //   }
+  // },
+  
+  updateActiveStatus: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
       const { active } = req.body;
-  
+   
       console.log("🔍 Incoming User ID:", id);
       console.log("🔍 Active Status from Request:", active);
       console.log("🔍 User Making Request:", req.user);
-  
+      
+      // Validate that the ID is a valid MongoDB ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400).json({ message: "Invalid user ID format." });
+        return;
+      }
+   
       // Validate that active is a boolean
       if (typeof active !== "boolean") {
-         res.status(400).json({ message: "Active status must be a boolean value." });
-         return
+        res.status(400).json({ message: "Active status must be a boolean value." });
+        return;
       }
-  
+   
       // Ensure the requester is an admin
-      if (!req.user || (req.user as any).role !== "admin") {
-         res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
-         
-          return
+      if (!req.user || req.user.role !== "admin") {
+        res.status(403).json({ message: "Unauthorized: Only admin can update active status." });
+        return;
       }
-  
-      // ✅ Find user before update
+   
+      // Find user before update with more detailed logging
+      console.log("🔍 Searching for user with ID:", id);
       const existingUser = await UserModel.findById(id);
+      console.log("🔍 Database query result:", existingUser ? "User found" : "User not found");
+      
       if (!existingUser) {
-         res.status(404).json({ message: "User not found." });
-         return
+        res.status(404).json({ message: "User not found." });
+        return;
       }
-  
+   
       console.log("🔍 Existing User Status:", existingUser.active);
-  
-      // ✅ Use `findByIdAndUpdate` for a direct DB update
+   
+      // Use `findByIdAndUpdate` for a direct DB update
       const updatedUser = await UserModel.findByIdAndUpdate(
         id,
-        { $set: { active } }, // Ensure proper update
-        { new: true, runValidators: true } // Return updated document
+        { $set: { active } },
+        { new: true, runValidators: true }
       );
-  
+   
       if (!updatedUser) {
-         res.status(404).json({ message: "User not found." });
-         return
+        res.status(404).json({ message: "User not found after update." });
+        return;
       }
-  
+   
       console.log("✅ Updated User Status:", updatedUser.active);
-  
+   
       res.status(200).json({ message: "User active status updated.", active: updatedUser.active });
-  
+   
     } catch (error) {
       console.error("❌ Error updating user:", error);
       next(error);
     }
   },
+
   
   
   

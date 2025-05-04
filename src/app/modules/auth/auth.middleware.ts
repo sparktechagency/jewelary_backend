@@ -26,41 +26,6 @@ export const isAuthenticated = (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
-// export const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   try {
-//     const token = req.headers.authorization?.split(" ")[1];  // Extract token from "Bearer <token>"
-
-//     if (!token) {
-//       res.status(401).json({ message: "No token provided." });
-//       return;
-//     }
-
-//     // Verify token and extract the payload
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as {
-//       email: (email: any, newOrder: any) => unknown; userId: string; role: string 
-// };
-
-//     // Ensure that the userId is a valid ObjectId
-//     if (!mongoose.Types.ObjectId.isValid(decoded.userId)) {
-//        res.status(400).json({ message: "Invalid user ID in token." });
-//        return
-//     }
-
-//     // Attach the decoded user information (userId and role) to req.user
-//     req.user = { _id: decoded.userId, id: decoded.userId, role: decoded.role, email: decoded.email };
-
-//     next();  // Proceed to the next middleware or route handler
-//   } catch (error) {
-//     console.error("Token verification error:", error);
-//     res.status(401).json({ message: "Invalid or expired token." });
-//   }
-// };
-
-
-
-// Extend Express Request
-
-
 export const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const token = req.headers.authorization?.split(' ')[1]; // Extract token from the Authorization header
 
@@ -103,6 +68,8 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
 };
 
 
+
+
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user || req.user.role !== 'admin') {
     res.status(403).json({ message: "Access denied. Admins only." });
@@ -119,5 +86,3 @@ export const generateToken = (userId: string, role: string): string => {
   const secretKey = process.env.JWT_SECRET || "default_secret";
   return jwt.sign({ userId, role }, secretKey, { expiresIn: "4d" }); // Ensure `userId` instead of `id`
 };
-
-

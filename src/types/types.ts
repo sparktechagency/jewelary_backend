@@ -6,3 +6,11 @@ interface Error {
   status?: string;
 }
 
+// In your types file
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role?: string;
+    email?: string;
+  };
+}

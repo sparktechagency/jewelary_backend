@@ -24,7 +24,8 @@ export const profileController = {
           }
       
           res.status(200).json({
-            user
+            user,
+            imagePath: user.profileImage, // Assuming you have a `profileImage` field in the user schema
           }); // Return the entire user object
         } catch (error) {
           next(error);
@@ -70,11 +71,13 @@ export const profileController = {
           user.phoneNumber = phoneNumber;
         }
 
-        // Handle the image upload and save image URL to the user profile if a new image is uploaded
-        if (req.file) {
-          const imageUrl = `/uploads/categories/${req.file.filename}`; // Assuming 'categories' folder for image storage
-          user.profileImage = imageUrl; // Assuming you have a `profileImage` field in the user schema
-        }
+  // Handle the image upload and save image URL to the user profile if a new image is uploaded
+if (req.files && (req.files as any).image && (req.files as any).image.length > 0) {
+  const imageFile = (req.files as any).image[0];
+  const imageUrl = `/uploads/categories/${imageFile.filename}`;
+  user.profileImage = imageUrl;
+}
+
 
         // Update user fields with new data
         user.username = username || user.username;
@@ -86,6 +89,7 @@ export const profileController = {
         res.status(200).json({ 
           message: "Profile updated successfully.",
            user,
+           imagePath: user.profileImage, // Return the image path if needed
            businessName, 
           
           //  imagePath: user.profileImage 

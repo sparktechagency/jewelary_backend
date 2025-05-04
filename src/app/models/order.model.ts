@@ -142,7 +142,7 @@ interface IOrder extends Document {
 
   }[];
   contactName: string;
-  // custom:string;
+
   contactNumber: string;
   deliverTo: string;
   totalAmount: number;
@@ -150,7 +150,7 @@ interface IOrder extends Document {
   receipts: string[];
   receiptUrls: string[];
   dueAmount: number;
-  
+  paymentType: string;
   paymentStatus: "Pending" | "Partial" | "Paid";
   orderStatus: "pending" |"custom" | "running" | "completed" | "cancelled" | "custom:accepted" | "custom:cancelled" | "custom:running";
   createdAt: Date;
@@ -214,6 +214,7 @@ const OrderSchema: Schema = new Schema(
     paidAmount: { type: Number, required: true },
     receipts: [{ type: String }],
     receiptUrls: [{ type: String }],
+
     dueAmount: { type: Number, required: true },
     paymentStatus: { type: String, enum: ["Pending", "Partial", "Paid"], required: true },
 
@@ -231,6 +232,7 @@ const OrderSchema: Schema = new Schema(
       enum: ["pending", "custom", "running", "completed", "cancelled", "custom:accepted", "custom:cancelled", "custom:running"], 
       required: true 
     },
+    paymentType: { type: String, enum: ["full", "partial"], required: false }, 
 
     createdAt: { type: Date, default: Date.now },
   },

@@ -369,17 +369,17 @@ updateInvoice: async (req: Request, res: Response, next: NextFunction): Promise<
 
  createCustomOrderByName :async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userName, products, paymentType, paidAmount, contactName, contactNumber } = req.body;
+      const { email, products, paymentType, paidAmount, contactName, contactNumber } = req.body;
   
-      const sanitizedUserName = userName?.toString().trim();
+      const sanitizedEmail = email?.toString().trim();
       const paidAmt = Number(paidAmount) || 0;
   
-      if (!sanitizedUserName) {
-        res.status(400).json({ message: 'Username is required.' });
+      if (!sanitizedEmail) {
+        res.status(400).json({ message: 'Email is required.' });
         return;
       }
   
-      const user = await UserModel.findOne({ username: sanitizedUserName });
+      const user = await UserModel.findOne({ email: sanitizedEmail });
       if (!user) {
         res.status(404).json({ message: 'User not found.' });
         return;
@@ -600,7 +600,6 @@ acceptOrCancelOrderController : async (req: Request, res: Response): Promise<voi
     const adminNotification = new NotificationModel(adminNotificationData);
     await adminNotification.save();
 
-    // ✅ Emit WebSocket notification with specific event name
     const eventName = `admin-notification::${userId}`;
     io.emit(eventName, {
       userId,
@@ -1009,6 +1008,27 @@ acceptOrCancelOrderController : async (req: Request, res: Response): Promise<voi
     }
   },
   
+   getRunningOrders : async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const runningOrders = await OrderModel.find({
+        orderStatus: { $in: ["running", "custom:running"] }
+      })
+        .populate("userId", "name email") // Populate user info (optional)
+        .populate("items.productId", "name") // Populate product info (optional)
+        .populate("items.variation.color")   // Populate variation color
+        .populate("items.variation.size")    // Populate variation size
+        .sort({ createdAt: -1 }); // Optional: newest first
+  
+      res.status(200).json({
+        message: "Running orders fetched successfully",
+        count: runningOrders.length,
+        orders: runningOrders,
+      });
+    } catch (error) {
+      console.error("Error fetching running orders:", error);
+      next(error);
+    }
+  },
 
   getCancelledOrder: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

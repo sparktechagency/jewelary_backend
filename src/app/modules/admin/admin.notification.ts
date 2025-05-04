@@ -58,9 +58,9 @@ export const AdminNotificationController = {
       // Fetch notifications related to messages with attachments
       const notifications = await NotificationModel.find({ userId: null }).sort({ createdAt: -1 });
 
-      // Fetch all messages that contain attachments (files, voice messages)
+
       const messagesWithAttachments = await MessageModel.find({
-        files: { $exists: true, $ne: [] }, // Only messages with attachments
+        files: { $exists: true, $ne: [] }, 
       })
         .populate("sender", "name email") // Populate user details
         .sort({ createdAt: -1 });

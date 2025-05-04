@@ -29,14 +29,14 @@ router.get("/cancelledOrder", isAuthenticated, isAdmin, OrderController.getCance
 
 router.get("/orderStatusCounts", isAuthenticated, isAdmin, OrderController.getOrderStatusCounts);
 router.get("/getPaymentPaid", isAuthenticated, isAdmin, OrderController.getPaymentPaid);
-router.put("/order-action",  OrderController.acceptOrCancelOrderController);
+router.put("/order-action", isAuthenticated, OrderController.acceptOrCancelOrderController);
 // Admin routes
 router.get("/", isAuthenticated, isAdmin, OrderController.getAllOrders);
 router.patch("/:id/update-status", isAuthenticated, isAdmin, OrderController.updateOrderStatus);
 router.delete("/:orderId", isAuthenticated, isAdmin, OrderController.deleteOrder);
-//custom order routes
-// Admin route to create a custom order
+
 router.post("/create-custom-order", isAuthenticated, isAdmin, OrderController.createCustomOrderByName);
-// router.get("/orders/status/:status", isAuthenticated, getMyOrders);
+router.get("/running-order", isAuthenticated, isAdmin, OrderController.getRunningOrders);
+
 
 export default router;
