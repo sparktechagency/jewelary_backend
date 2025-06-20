@@ -22,7 +22,7 @@ export const PaymentController = {
 
  
 
-   processPayment :async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+processPayment :async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { orderId, paymentType, amount } = req.body;
       const userId = (req.user as { id: string }).id;

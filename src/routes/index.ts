@@ -13,6 +13,7 @@ import legalDocumentRoute from '../app/modules/legalDoc/legalDocument.routes';
 import advvartaisement from '../app/modules/advartaisement/adv.route';
 import notification from '../app/modules/notification/notification.route';
 import manualOrderRoutes from '../app/modules/manualorder/manualOrder.route';
+import { RuleRoutes } from '../app/modules/rule/rule.route';
 // import productRoute from '../app/modules/product/product.routes'
 
 
@@ -41,6 +42,7 @@ const apiRoutes = [
   { path: '/', route: manualOrderRoutes  },
 
   { path: '/earnings', route: EarningRoutes },
+  { path: '/rule', route: RuleRoutes },
   // { path: '/earnings/monthly', route: EarningRoutes },
   // { path: '/earnings/yearly', route: EarningRoutes },
   // { path: '/earnings/pending', route: EarningRoutes },

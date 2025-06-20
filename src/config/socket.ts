@@ -19,30 +19,6 @@ export const initSocket = (server: any) => {
     socket.on("orderStatusUpdate", (data) => {
       console.log("Received order status update:", data);
 
-    // Handle sending messages with productId
-    // socket.on("sendMessage", async (data) => {
-    //   console.log("Received Socket Message:", data); // ✅ Debugging log
-
-    //   const { receiverId, content, senderType, productId,messageSource } = data;
-
-    //   if (!receiverId || !content || !senderType || !productId) {
-    //     socket.emit("error", { message: "Missing required fields" });
-    //     return;
-    //   }
-
-    //   try {
-    //     const message = await MessageService.sendMessage(receiverId, content, senderType, productId,messageSource);
-
-    //     // Emit message to the receiver's room
-    //     io.to(receiverId).emit("receiveMessage", message);
-
-    //     // Confirm message sent to sender
-    //     socket.emit("messageSent", message);
-    //   } catch (error) {
-    //     console.error("Socket Message Error:", error); // ✅ Debugging log
-    //     socket.emit("error", { message: "Failed to send message" });
-    //   }
-    // });
 
     socket.on("sendMessage", async (data) => {
       const { receiverId, content, senderType, productId, messageSource,sender } = data;

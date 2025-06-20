@@ -26,8 +26,6 @@ export const initSocket = (server: any) => {
         message,
       });
 
-      // Optionally, save the notification to the database (if needed)
-      // Notification logic can be added here if you want to store the notifications
     });
 
     // Sending a message event
