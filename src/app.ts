@@ -23,10 +23,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(cors({
-  origin: ["http://localhost:3000","https://relaxed-alfajores-57dad2.netlify.app"], // Make sure the client domain is allowed
+  origin: ["http://localhost:3000","https://relaxed-alfajores-57dad2.netlify.app"], 
   credentials: true,
 }))
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('Hello Server Is Running')
 app.post("/api/products",uploadProduct, ProductController.create)
 // app.use("/api/products", uploadProduct, ProductController.create);
 
