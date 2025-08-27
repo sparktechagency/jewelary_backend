@@ -27,7 +27,6 @@ app.use(cors({
   credentials: true,
 }))
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use('Hello Server Is Running')
 app.post("/api/products",uploadProduct, ProductController.create)
 // app.use("/api/products", uploadProduct, ProductController.create);
 
@@ -40,7 +39,10 @@ app.use((req, res, next) => {
   }
 });
 
-
+app.get('/', (req, res) => {
+  console.log('Server is beep beep');
+  res.send('Server is beep beep');
+});
 //This are cors
 
 
