@@ -77,8 +77,7 @@ connectDB();
 
 // ✅ Start the server
 server.listen(SocketPort, () => {
-  // console.log(`🚀 Server & Socket.io running on http://10.0.70.208:${PORT}`);
-  console.log(`🚀 Server & Socket.io running on http://10.0.70.208:${SocketPort}`);
+  console.log(`🚀 Server & Socket.io running on http://72.60.42.191:${SocketPort}`);
 });
 
 // Export both app and io
