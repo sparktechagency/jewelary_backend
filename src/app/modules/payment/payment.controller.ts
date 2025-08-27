@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
-
 import dotenv from "dotenv";
 import PaymentModel from "../../models/payment.model";
 import OrderModel from "../../models/order.model";
@@ -9,8 +8,7 @@ dotenv.config();
 
 // Stripe initialization with the correct API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || " ", {
-  apiVersion: "2025-01-27.acacia", // Keep the API version as specified
-  // Stripe initialization
+   apiVersion: '2025-02-24.acacia',
 });
 
 // Custom type for raw request body
